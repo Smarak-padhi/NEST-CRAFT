@@ -227,6 +227,108 @@ class TestDEF01Remediation(unittest.TestCase):
             if e.dxftype() == 'LWPOLYLINE':
                 self.assertTrue(e.is_closed)
 
+    def test_repair_that_changes_hole_count_rejected(self):
+        """Validates that a self-intersecting contour that alters the number of holes is detected and rejected."""
+        # Square with a hole, where the outer boundary has a self-intersection crossing into the hole
+        # Outer shell self-crosses at (50, 20)
+        outer_shell = [(0, 0), (100, 0), (100, 100), (0, 100), (0, 20), (80, 20), (50, 40), (20, 20), (0, 0)]
+        hole = [(30, 60), (70, 60), (70, 90), (30, 90)]
+        poly = Polygon(shell=outer_shell, holes=[hole])
+        self.assertFalse(poly.is_valid)
+        
+        with self.assertRaises(CADTopologyError) as ctx:
+            Part(poly, "hole_altered_part", quantity=1)
+        self.assertIn("materially altered topology", str(ctx.exception))
+
+    def test_repair_preserves_area_but_changes_topology_rejected(self):
+        """Validates that even when make_valid produces near-zero area difference, component count change triggers CADTopologyError."""
+        # Standard symmetrical bowtie: input area is 800, repaired area is 800 (0.0% area change)
+        bowtie = Polygon([(0, 0), (40, 40), (40, 0), (0, 40), (0, 0)])
+        self.assertFalse(bowtie.is_valid)
+        
+        with self.assertRaises(CADTopologyError) as ctx:
+            Part(bowtie, "zero_area_change_bowtie", quantity=1)
+        self.assertIn("components: 1 -> 2", str(ctx.exception))
+
+    def test_unauthorized_repair_rejected_in_dxf_ingestion(self):
+        """Validates that unauthorized self-intersecting geometry in a DXF is rejected during ordinary import."""
+        from team_algoryxz.nest_craft.src.dxf_io import DXFValidationError, parse_dxf
+        dxf_path = os.path.join(self.temp_dir.name, "unauthorized_bowtie.dxf")
+        doc = ezdxf.new('R2010')
+        msp = doc.modelspace()
+        msp.add_lwpolyline([(0, 0), (50, 50), (50, 0), (0, 50)], close=True)
+        doc.saveas(dxf_path)
+        
+        # 1. Default validate_and_parse_dxf must report is_valid=False
+        parts, report = validate_and_parse_dxf(dxf_path, allow_repaired_topology=False)
+        self.assertFalse(report["is_valid"])
+        self.assertEqual(len(parts), 0)
+        self.assertTrue(any("self-intersections" in err for err in report["errors"]))
+        
+        # 2. Strict parse_dxf must raise DXFValidationError
+        with self.assertRaises(DXFValidationError):
+            parse_dxf(dxf_path, strict=True, allow_repaired_topology=False)
+            
+        # 3. Explicitly authorized parse must succeed and preserve both components
+        parts_auth, report_auth = validate_and_parse_dxf(dxf_path, allow_repaired_topology=True)
+        self.assertTrue(report_auth["is_valid"])
+        self.assertEqual(len(parts_auth), 2)
+
+    def test_multipart_sheet_boundary_containment(self):
+        """Validates that Sheet.can_contain enforces boundary limits across the entire MultiPolygon envelope."""
+        multi = MultiPolygon([box(0, 0, 40, 40), box(80, 0, 120, 40)])
+        part = Part(multi, "multi_contain", quantity=1)
+        sheet = Sheet(width=150, height=100)
+        
+        # Placed inside sheet
+        placed_inside = affinity.translate(part.base_polygon, 10, 10) # Bounding box [10..130, 10..50]
+        self.assertTrue(sheet.can_contain(placed_inside))
+        
+        # Placed protruding past right boundary
+        placed_outside_x = affinity.translate(part.base_polygon, 40, 10) # Bounding box [40..160, 10..50]
+        self.assertFalse(sheet.can_contain(placed_outside_x))
+
+    def test_part_in_part_with_multipart_geometry(self):
+        """Validates that compute_hole_feasible_regions extracts interior holes located in a MultiPolygon component."""
+        # Component 1: solid square; Component 2: square with hole
+        comp1 = box(0, 0, 50, 50)
+        comp2 = Polygon([(70, 0), (170, 0), (170, 100), (70, 100)], holes=[[(100, 30), (140, 30), (140, 70), (100, 70)]])
+        multi = MultiPolygon([comp1, comp2])
+        part = Part(multi, "multi_with_hole", quantity=1)
+        
+        feas = compute_hole_feasible_regions(part.polygon, clearance=2.0)
+        self.assertEqual(len(feas), 1)
+        # Hole is 40x40. With 2.0 clearance on each side, feasible region is 36x36 = 1296 mm^2
+        self.assertAlmostEqual(feas[0].area, 1296.0, places=3)
+
+    def test_multipart_rotation_and_translation(self):
+        """Validates that MultiPolygon transforms coherently under rotation and translation."""
+        comp1 = box(0, 0, 30, 30)
+        comp2 = box(50, 0, 80, 30)
+        part = Part(MultiPolygon([comp1, comp2]), "multi_transform", quantity=1)
+        
+        for angle in [0.0, 90.0, 180.0, 270.0, 45.0]:
+            rotated = part.get_rotated(angle)
+            self.assertTrue(isinstance(rotated, MultiPolygon))
+            self.assertEqual(len(rotated.geoms), 2)
+            self.assertAlmostEqual(rotated.area, part.area, places=4)
+            # Distance between components must be conserved
+            c0, c1 = list(rotated.geoms)
+            dist = c0.distance(c1)
+            self.assertAlmostEqual(dist, 20.0, places=3)
+
+    def test_narrow_slots_and_small_features_preserved(self):
+        """Validates that a part with a narrow 0.5 mm slot and 1 mm hole maintains valid geometry and area."""
+        # 100x100 plate with 0.5 mm wide slot extending into it
+        poly = Polygon([
+            (0, 0), (49.75, 0), (49.75, 40), (50.25, 40), (50.25, 0),
+            (100, 0), (100, 100), (0, 100), (0, 0)
+        ])
+        self.assertTrue(poly.is_valid)
+        part = Part(poly, "slotted_plate", quantity=1)
+        self.assertAlmostEqual(part.area, 10000.0 - (0.5 * 40.0), places=3)
+        self.assertTrue(part.polygon.is_valid)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,11 +1,16 @@
 # NEST-CRAFT — GitHub Handoff and Engineering Verification Report
 
 **Project:** NEST-CRAFT (Team Algoryxz — Odisha AI Hackathon 2026)  
-**Date:** November 13, 2026  
+**Date:** November 13, 2026 (Updated Post-Publication Revision)  
 **Repository:** [https://github.com/Smarak-padhi/NEST-CRAFT](https://github.com/Smarak-padhi/NEST-CRAFT)  
 **Remote URL:** `https://github.com/Smarak-padhi/NEST-CRAFT.git`  
 **Target Branch:** `main`  
 **Audit Status:** Release-Ready & Verified (Stages A, B, C, C.1, C.2, D complete)  
+
+> [!IMPORTANT]
+> **Post-Publication Audit Notice (November 13, 2026):**  
+> This initial handoff report contained documentation inaccuracies regarding benchmark configuration parameters (previously misstating 24 parts on 2,400 × 1,200 mm stock at 5.0 mm clearance, whereas the true historical benchmark was 17 parts on 800 × 500 mm stock at 4.0 mm clearance), execution environment versioning (previously citing Python 3.11.9 instead of the verified Python 3.12.10 environment), and assumed file tree paths (such as `app/main.py` instead of `app/app.py`).  
+> These statements are officially superseded by [`POST_PUBLICATION_AUDIT.md`](POST_PUBLICATION_AUDIT.md) and [`POST_PUBLICATION_BENCHMARK_AUDIT.md`](POST_PUBLICATION_BENCHMARK_AUDIT.md). The corrected specifications are presented below.
 
 ---
 
@@ -18,7 +23,7 @@ This handoff packages and publishes the complete codebase, test suite, validatio
 2. **Stage B:** Implementation of geometry-verified Part-in-Part nesting (`ENG-04`) with hole extraction, interior clearance buffering, and containment validation.
 3. **Stage C & C.1:** Adversarial geometry fuzzing, CAM structural export validation, benchmark reconciliation (clarifying that linear compaction does not equal discrete plate purchase reduction, and rectifying adaptive rotation claims).
 4. **Stage C.2:** Independent verification gate confirming all baseline benchmarks and reports without regression.
-5. **Stage D:** Remediation of `DEF-01` (preventing silent component loss during CAD ingestion) with full MultiPolygon support, explicit topology-change authorization via `CADTopologyError`, and 8 regression tests.
+5. **Stage D & Post-Pub:** Remediation of `DEF-01` (preventing silent component loss during CAD ingestion) with full MultiPolygon support, explicit topology-change authorization via `CADTopologyError`, closed-loop DXF ingestion enforcement, and 15 dedicated regression tests (66 passed total).
 
 ---
 
@@ -29,6 +34,7 @@ The repository root is organized for developer clarity, reproducible execution, 
 ```
 NEST-CRAFT/
 ├── .gitignore                      # Pinned Git ignore (Python, pytest, virtualenvs, logs)
+├── pytest.ini                      # Root pytest config (pythonpath = .)
 ├── README.md                       # Complete project overview, architecture, quickstart
 ├── CONTRIBUTING.md                 # Contributor guidelines and engineering standards
 ├── requirements.txt                # Exact project runtime dependencies
@@ -48,48 +54,46 @@ NEST-CRAFT/
         │   ├── nest-craft-geometry-qa/
         │   └── nest-craft-remnant-accounting/
         ├── app/                    # Streamlit Industrial UI application
-        │   └── main.py
+        │   └── app.py
         ├── benchmarks/             # Benchmark test suites, datasets, and execution scripts
-        │   ├── benchmark_reconciliation_raw.json
-        │   ├── benchmark_reconciliation_summary.csv
-        │   ├── run_benchmarks.py
-        │   └── run_reconciliation.py
+        │   └── run_nesting_benchmarks.py
         ├── data/                   # Validated DXF test files and synthetic profiles
-        │   ├── bracket.dxf
-        │   ├── flange.dxf
-        │   ├── plate_sample.dxf
-        │   └── triangle.dxf
-        ├── reports/                # Stage A through D audit reports and backups
+        │   ├── dataset_inventory.md
+        │   ├── download_sample_esicup.py
+        │   ├── fetch_esicup.py
+        │   ├── inspect_benchmarks.py
+        │   ├── esicup/             # ESICUP benchmark instances (shapes.txt, swim.txt, etc.)
+        │   ├── industrial_samples/ # 4 production-grade DXFs (gusset, bracket, flange, base plate)
+        │   └── samples/            # Standard sample DXF suite
+        ├── reports/                # Stage A through D audit reports, benchmarks, and handoff
         │   ├── GITHUB_HANDOFF_REPORT.md
+        │   ├── POST_PUBLICATION_AUDIT.md
+        │   ├── POST_PUBLICATION_BENCHMARK_AUDIT.md
+        │   ├── post_publication_benchmark_results.json
         │   ├── STAGE_A_AUDIT_REPORT.md
         │   ├── STAGE_B_IMPLEMENTATION_REPORT.md
-        │   ├── STAGE_C_BENCHMARK_REPORT.md
-        │   ├── STAGE_C_CAM_VALIDATION_REPORT.md
-        │   ├── STAGE_C_GEOMETRY_ADVERSARIAL_REPORT.md
-        │   ├── STAGE_C_TEST_EXECUTION_REPORT.md
-        │   ├── STAGE_C_TRUTHFULNESS_REPORT.md
+        │   ├── STAGE_C_BENCHMARK_RECONCILIATION.md
+        │   ├── STAGE_C_CAM_COMPATIBILITY.md
+        │   ├── STAGE_C_GEOMETRY_STRESS_TEST.md
+        │   ├── STAGE_C_RELEASE_READINESS.md
+        │   ├── STAGE_C_SECURITY_REVIEW.md
         │   ├── STAGE_C1_CHANGELOG.md
-        │   ├── STAGE_C2_INDEPENDENT_VERIFICATION_REPORT.md
-        │   └── STAGE_D_REMEDIATION_REPORT.md
+        │   ├── STAGE_C2_INDEPENDENT_VERIFICATION.md
+        │   └── STAGE_D_DEF01_REMEDIATION.md
         ├── src/                    # Core NEST-CRAFT nesting engine
-        │   ├── __init__.py
-        │   ├── algorithms.py       # BLF and Simulated Annealing with Part-in-Part nesting
-        │   ├── dxf_export.py       # DXF nesting layout export with layer segregation
-        │   ├── dxf_parser.py       # DXF ingestion (LWPOLYLINE, POLYLINE, LINE, ARC, CIRCLE)
-        │   ├── geometry.py         # Part, Stock, MultiPolygon support, and topology guardrails
-        │   ├── remnant.py          # Maximal Empty Rectangle (MER) remnant extraction
-        │   └── utils.py
-        └── tests/                  # 59 comprehensive unit, adversarial, and regression tests
-            ├── test_algorithms.py
-            ├── test_cad_boundary_matrix.py
+        │   ├── baseline.py         # Bottom-Left-Fill heuristic engine
+        │   ├── calculator.py       # Metrics and remnant plate math
+        │   ├── dxf_io.py           # DXF validation, entity parsing, and export
+        │   ├── geometry.py         # Part, Sheet, MultiPolygon, CADTopologyError
+        │   └── optimizer.py        # Simulated Annealing engine
+        └── tests/                  # 7 test modules (66 passed tests)
+            ├── test_adaptive_rotation.py
             ├── test_def01_remediation.py
-            ├── test_dxf_export.py
-            ├── test_dxf_parser.py
-            ├── test_edge_cases.py
-            ├── test_geometry.py
-            ├── test_part_in_part.py
-            ├── test_remnant.py
-            └── test_stage_c1_corrections.py
+            ├── test_dxf_reliability.py
+            ├── test_geometry_adversarial_stress.py
+            ├── test_geometry_validation.py
+            ├── test_nesting.py
+            └── test_part_in_part_nesting.py
 ```
 
 ---
@@ -97,31 +101,32 @@ NEST-CRAFT/
 ## 3. Verification & Benchmark Reproducibility
 
 ### A. Test Suite Status
-Before handoff, the full test suite was executed in the clean repository structure:
+Before publication, the full test suite was executed in the clean repository structure:
 ```bash
 pytest team_algoryxz/nest_craft/tests
 ```
 **Outcome:**
-- **59 passed** in 2.82 seconds.
+- **Environment:** Windows 11 · Python 3.12.10 · pytest 8.3.3
+- **66 passed** in 4.37 seconds across 7 test modules.
 - 100% assertion pass rate across unit, boundary, export, part-in-part, and Stage D regression suites.
 
 ### B. Benchmark Reproducibility (Industrial Dataset)
 The standardized 5-seed benchmark was re-verified against the historical reconciliation baseline:
-- **Dataset:** Industrial Dataset (24 mixed parts: brackets, flanges, triangles).
-- **Stock Plate:** $2,400\text{ mm} \times 1,200\text{ mm}$ ($2.88\text{ m}^2$ per sheet).
-- **Clearance:** $5.0\text{ mm}$ thermal kerf offset.
-- **Seeds:** `[1966, 2110, 1742, 1986, 1926]`.
+- **Dataset:** Industrial Dataset (17 parts: 4 gussets, 6 brackets, 4 flanges, 3 base plates).
+- **Stock Plate:** $800.0\text{ mm} \times 500.0\text{ mm}$ ($400,000.0\text{ mm}^2$ per sheet).
+- **Clearance:** $4.0\text{ mm}$ thermal kerf offset.
+- **Seeds:** `[42, 101, 202, 303, 404]`.
 
 | Algorithm | Seeds Tested | Mean Extent (mm) | Sheet Count | Area Utilization | Reusable Remnants |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BLF Baseline** | Deterministic | $2,350.00\text{ mm}$ | 3 discrete plates | 48.74% | $0.85\text{ m}^2$ |
-| **Simulated Annealing (Orthogonal)** | 5 seeds | **$1,946.00\text{ mm}$** | 3 discrete plates | 58.85% | **$1.42\text{ m}^2$** |
-| **Simulated Annealing (Adaptive 45°)** | 5 seeds | $2,509.33\text{ mm}$ | 3.6 discrete plates | 45.62% | $0.62\text{ m}^2$ |
+| **BLF Baseline** | Deterministic | $2,350.00\text{ mm}$ | 3 discrete plates | 46.67% | $25,000\text{ mm}^2$ |
+| **Simulated Annealing (Orthogonal)** | 5 seeds | **$1,946.00\text{ mm}$** | 3 discrete plates | 46.67% | **$227,000\text{ mm}^2$** |
+| **Simulated Annealing (Adaptive 45°)** | 5 seeds | $2,509.34\text{ mm}$ | 3.60 discrete plates | 39.67% | $185,326\text{ mm}^2$ |
 
 **Confirmed Engineering Facts:**
 - Orthogonal Simulated Annealing achieves an average **$17.19\%$ linear compaction** ($2,350\text{ mm} \rightarrow 1,946\text{ mm}$) compared to BLF.
-- Both algorithms require **exactly 3 stock plates** on the tested industrial part mix. Linear compaction frees contiguous prime remnant plate area ($1.42\text{ m}^2$ vs $0.85\text{ m}^2$), but does **not** reduce discrete plate purchase count.
-- Adaptive rotation ($45^\circ$) produces bounding-box overhangs on rectangular stock, yielding a $+28.95\%$ linear span penalty and requiring a 4th plate in 3 out of 5 seeds.
+- Both algorithms require **exactly 3 stock plates** on the tested industrial part mix. Linear compaction frees contiguous prime remnant plate area ($227,000\text{ mm}^2$ vs $25,000\text{ mm}^2$), but does **not** reduce discrete plate purchase count.
+- Adaptive rotation ($15^\circ$ coarse + $5^\circ$ fine) produces bounding-box overhangs on rectangular stock, yielding a $+28.95\%$ linear span penalty and requiring a 4th plate in 3 out of 5 seeds.
 
 ---
 
@@ -131,7 +136,7 @@ The standardized 5-seed benchmark was re-verified against the historical reconci
    - NEST-CRAFT outputs standardized 2D DXF files containing parts, stock boundaries, and cut paths.
    - NEST-CRAFT does **not** generate CNC G-code (`G00`, `G01`, `M03`, etc.), nor does it control CNC machine feedrates, laser piercing routines, or lead-in/lead-out tabs.
 2. **CAM Interoperability:**
-   - DXF exports have been validated against AutoCAD R2018 / DXF R12 polygon structural requirements.
+   - DXF exports have been validated against AutoCAD R2018 / DXF R12 polygon structural requirements via `ezdxf.audit()`.
    - Commercial CAM import (e.g., CypCut, FastCAM, ProNest) has **not** been physically tested on live CNC cutting tables.
 3. **Material Accounting:**
    - Linear compaction must never be conflated with plate purchase savings. Sheet purchases are discrete integers.
@@ -159,11 +164,11 @@ python -m venv .venv
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Verify test suite
+# 4. Verify test suite (66 tests)
 pytest team_algoryxz/nest_craft/tests
 
 # 5. Launch UI
-streamlit run team_algoryxz/nest_craft/app/main.py
+streamlit run team_algoryxz/nest_craft/app/app.py
 ```
 
 ---

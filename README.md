@@ -3,7 +3,7 @@
 **Team Algoryxz · Odisha AI Hackathon 2026**
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-59%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
+[![Tests Passing](https://img.shields.io/badge/tests-66%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
 [![Prototype Status](https://img.shields.io/badge/status-Hackathon%20Demo%20Ready-orange.svg)](docs/PROJECT_STATUS.md)
 
 NEST-CRAFT is a Python and Streamlit engineering prototype designed to optimize 2D irregular sheet-metal nesting for manufacturing fabrication. It ingests CAD/DXF profiles, models complex polygonal parts and interior apertures using Shapely, executes heuristic Bottom-Left-Fill (BLF) and Simulated Annealing (SA) optimization, enables Part-in-Part cavity nesting, and exports multi-layer AutoCAD R2010 DXF files for downstream CAM toolpath generation.
@@ -16,10 +16,10 @@ NEST-CRAFT is a Python and Streamlit engineering prototype designed to optimize 
 
 ## 1. Why We Built NEST-CRAFT
 
-In regional fabrication clusters across Odisha and India, micro, small, and medium enterprises (MSMEs) face material utilization rates as low as 40–55% when cutting structural components from standardized sheet metal stock. Commercial enterprise nesting suites often cost thousands of dollars per seat, pricing out smaller job shops. 
+In structural and job-shop fabrication, manual nesting of irregular parts on standardized sheet metal stock is time-consuming and often results in fragmented offcuts. Commercial enterprise nesting suites can be cost-prohibitive for smaller workshops. 
 
-NEST-CRAFT was engineered to demonstrate that modern computational geometry and metaheuristic optimization can:
-1. **Reduce Linear Cutting Extent:** Packing components tighter along continuous shearing lines to minimize wasted stock advance (achieving up to **-17.19% linear extent compaction** on standard industrial batches).
+NEST-CRAFT was engineered as an open research and engineering prototype to explore how computational geometry and metaheuristic optimization can:
+1. **Reduce Linear Cutting Extent:** Packing components tighter along continuous shearing lines to minimize wasted stock advance (achieving a **17.19% reduction in linear nesting extent versus BLF on the specified 17-part, 800 × 500 mm, 4 mm-clearance industrial benchmark**).
 2. **Reclaim Offcut Remnant Plates:** Quantifying rectangular virgin offcuts ($> 100\text{ mm} \times 100\text{ mm}$) to enable secondary job scheduling rather than consigning large plate sections to the scrap bin.
 3. **Exploit Part-in-Part Cavities:** Automatically placing smaller brackets inside the internal cutouts of larger flange and base plates, eliminating artificial voids.
 
@@ -109,13 +109,12 @@ Open `http://localhost:8501` in your browser.
 
 ## 6. Running Tests & Reproducing Benchmarks
 
-### Execute the 59-Test Automated Suite:
+### Execute the 66-Test Automated Suite:
 ```bash
-# Set PYTHONPATH to repository root
-$env:PYTHONPATH = "."
+# Run pytest directly from repository root (configured via pytest.ini)
 pytest team_algoryxz/nest_craft/tests
 ```
-*Expected Result:* **59 passed in ~3 seconds** (0 failures, 0 errors).
+*Expected Result:* **66 passed in ~4 seconds** across 7 test modules (0 failures, 0 errors).
 
 ### Reproduce the Multi-Seed Optimization Benchmarks:
 ```bash
@@ -125,13 +124,14 @@ python team_algoryxz/nest_craft/benchmarks/run_nesting_benchmarks.py
 ### Industrial Benchmark Reference (17-Part Batch, 5 Seeds):
 - Stock: $800 \times 500\text{ mm}$, Clearance: $4.0\text{ mm}$, Margin: $5.0\text{ mm}$.
 - Discrete Sheet Procurement: Exactly **3 sheets** across 100% of orthogonal runs.
+- Random Seeds: `[42, 101, 202, 303, 404]`.
 
 | Metric | BLF Baseline | Simulated Annealing (Orthogonal) | Net Impact |
 | :--- | :---: | :---: | :---: |
-| **Total Linear Extent (Mean)** | 2,350.00 mm | **1,946.00 mm** | **-17.19% compaction** |
+| **Total Linear Extent (Mean)** | 2,350.00 mm | **1,946.00 mm** | **-17.19% linear compaction** |
 | **Discrete Sheets Required** | 3 plates | **3 plates** | Preserved (Zero extra stock) |
-| **Average Prime Remnant Offcut** | 25,000 mm² | **227,000 mm²** | **+808% usable remnant** |
-| **Average Runtime** | 0.44s | **2.51s** | Fast interactive feedback |
+| **Average Prime Remnant Offcut** | 25,000 mm² | **227,000 mm²** | **+808% usable remnant area** |
+| **Average Runtime** | 3.59s | **7.48s** | Fast interactive feedback |
 
 *Metric Truthfulness Disclosure:* Compaction of linear extent along an unfinished final plate does **NOT** equal discrete sheet purchase savings. When 3 discrete plates are consumed, 3 plates remain physically required. Fractional averages across seeds (e.g. 3.60 sheets) are statistical aggregation artifacts, not physical fractional purchases.
 
@@ -146,6 +146,7 @@ python team_algoryxz/nest_craft/benchmarks/run_nesting_benchmarks.py
 | **Stage C & C.1** | Reconciliation & Adversarial Testing | [`STAGE_C_BENCHMARK_RECONCILIATION.md`](team_algoryxz/nest_craft/reports/STAGE_C_BENCHMARK_RECONCILIATION.md), [`STAGE_C_GEOMETRY_STRESS_TEST.md`](team_algoryxz/nest_craft/reports/STAGE_C_GEOMETRY_STRESS_TEST.md), [`STAGE_C_CAM_COMPATIBILITY.md`](team_algoryxz/nest_craft/reports/STAGE_C_CAM_COMPATIBILITY.md) |
 | **Stage C.2** | Independent Verification Gate | [`STAGE_C2_INDEPENDENT_VERIFICATION.md`](team_algoryxz/nest_craft/reports/STAGE_C2_INDEPENDENT_VERIFICATION.md) |
 | **Stage D** | DEF-01 Geometry Integrity Remediation | [`STAGE_D_DEF01_REMEDIATION.md`](team_algoryxz/nest_craft/reports/STAGE_D_DEF01_REMEDIATION.md), [`test_def01_remediation.py`](team_algoryxz/nest_craft/tests/test_def01_remediation.py) |
+| **Post-Publication** | Benchmark Audit & Guardrail Verification | [`POST_PUBLICATION_AUDIT.md`](team_algoryxz/nest_craft/reports/POST_PUBLICATION_AUDIT.md), [`POST_PUBLICATION_BENCHMARK_AUDIT.md`](team_algoryxz/nest_craft/reports/POST_PUBLICATION_BENCHMARK_AUDIT.md) |
 
 For complete documentation, refer to:
 - [Developer Onboarding Guide](docs/DEVELOPER_ONBOARDING.md)

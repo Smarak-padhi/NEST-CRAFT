@@ -10,8 +10,8 @@
 
 | Dimension | Current State | Verifiable Evidence |
 | :--- | :---: | :--- |
-| **Automated Tests** | **59 / 59 Passing** (100%) | Verified via pytest in clean repository root (2.82s execution). |
-| **Geometry Engine** | **DEF-01 Remediated** | Valid MultiPolygons fully preserved. Silent component reduction eliminated. `CADTopologyError` raised on unsanctioned component splitting. |
+| **Automated Tests** | **66 / 66 Passing** (100%) | Verified via pytest in clean repository root (4.37s execution). |
+| **Geometry Engine** | **DEF-01 Remediated** | Valid MultiPolygons fully preserved. Silent component reduction eliminated. `CADTopologyError` raised on unsanctioned component splitting and hole count alteration. DXF ingestion closed-loop enforced. |
 | **Optimization Core** | **BLF & SA Operational** | BLF baseline and Simulated Annealing with Part-in-Part nesting operational across fixed seeds. |
 | **Benchmark Status** | **Reconciled & Preserved** | 5-seed Industrial batch orthogonal mean of **1,946.00 mm** verified without regression. |
 | **CAD / DXF I/O** | **Structural Validation** | DXF export audited via `ezdxf.audit()` (0 errors, 0 unclosed polylines). Layer separation verified. |

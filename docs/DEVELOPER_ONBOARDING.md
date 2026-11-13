@@ -69,31 +69,26 @@ Once started, the browser opens at `http://localhost:8501`.
 
 ## 3. Running Automated Tests
 
-Run the complete test suite from the repository root:
+Run the complete test suite from the repository root (configured via `pytest.ini`):
 ```bash
-# On Windows PowerShell
-$env:PYTHONPATH = "."
 pytest team_algoryxz/nest_craft/tests
-
-# On Linux/macOS
-PYTHONPATH=. pytest team_algoryxz/nest_craft/tests
 ```
 
 ### Expected Output:
 ```
-collected 59 items
-team_algoryxz/nest_craft/tests/test_adaptive_rotation.py ........        [ 13%]
-team_algoryxz/nest_craft/tests/test_def01_remediation.py ........        [ 27%]
-team_algoryxz/nest_craft/tests/test_dxf_reliability.py .........         [ 42%]
-team_algoryxz/nest_craft/tests/test_geometry_adversarial_stress.py ..... [ 50%]
-.....                                                                    [ 59%]
-team_algoryxz/nest_craft/tests/test_geometry_validation.py ........      [ 72%]
-team_algoryxz/nest_craft/tests/test_nesting.py .......                   [ 84%]
+collected 66 items
+team_algoryxz/nest_craft/tests/test_adaptive_rotation.py ........        [ 12%]
+team_algoryxz/nest_craft/tests/test_def01_remediation.py ............... [ 34%]
+team_algoryxz/nest_craft/tests/test_dxf_reliability.py .........         [ 48%]
+team_algoryxz/nest_craft/tests/test_geometry_adversarial_stress.py ..... [ 56%]
+.....                                                                    [ 63%]
+team_algoryxz/nest_craft/tests/test_geometry_validation.py ........      [ 75%]
+team_algoryxz/nest_craft/tests/test_nesting.py .......                   [ 86%]
 team_algoryxz/nest_craft/tests/test_part_in_part_nesting.py .........    [100%]
-============================= 59 passed in ~3s ==============================
+============================= 66 passed in ~4s ==============================
 ```
 
-All 59 unit, integration, adversarial stress, and DEF-01 remediation tests must pass without errors or warnings.
+All 66 unit, integration, adversarial stress, and DEF-01 remediation tests must pass without errors or warnings.
 
 ---
 

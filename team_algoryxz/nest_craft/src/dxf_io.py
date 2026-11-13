@@ -160,7 +160,7 @@ def parse_esicup_xml(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
                     
     return parts, metadata
 
-def validate_and_parse_dxf(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
+def validate_and_parse_dxf(file_path: str, allow_repaired_topology: bool = False) -> Tuple[List[Part], Dict[str, Any]]:
     """
     Validates and parses an AutoCAD DXF file with comprehensive reliability guarantees:
     1. Supports LWPOLYLINE (including arc bulges), POLYLINE, CIRCLE, ARC, LINE, SPLINE, ELLIPSE.
@@ -259,6 +259,13 @@ def validate_and_parse_dxf(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
                 if (p.is_closed or is_closed_geom) and len(pts) >= 3:
                     poly = Polygon(pts)
                     if not poly.is_valid:
+                        if not allow_repaired_topology:
+                            report["is_valid"] = False
+                            report["errors"].append(
+                                f"Contour in '{os.path.basename(file_path)}' has self-intersections or invalid topology. "
+                                "Repair in CAD or explicitly authorize via allow_repaired_topology=True."
+                            )
+                            return [], report
                         poly = make_valid(poly)
                     if isinstance(poly, MultiPolygon):
                         closed_polys.extend([sub for sub in poly.geoms if sub.area > 1e-3])
@@ -311,6 +318,13 @@ def validate_and_parse_dxf(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
     valid_polys = []
     for poly in closed_polys:
         if not poly.is_valid:
+            if not allow_repaired_topology:
+                report["is_valid"] = False
+                report["errors"].append(
+                    f"Contour in '{os.path.basename(file_path)}' has self-intersections or invalid topology. "
+                    "Repair in CAD or explicitly authorize via allow_repaired_topology=True."
+                )
+                return [], report
             poly = make_valid(poly)
         if isinstance(poly, MultiPolygon):
             for sub in poly.geoms:
@@ -409,20 +423,24 @@ def validate_and_parse_dxf(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
                     "holes_count": hole_count,
                     "gross_area": round(outer_poly.area, 2),
                     "net_area": round(part_poly.area, 2),
-                    "allow_repaired_topology": True
+                    "allow_repaired_topology": allow_repaired_topology
                 }
-                parts.append(Part(part_poly, part_id=part_id, quantity=1, metadata=metadata))
+                try:
+                    parts.append(Part(part_poly, part_id=part_id, quantity=1, metadata=metadata))
+                except Exception as e:
+                    report["is_valid"] = False
+                    report["errors"].append(str(e))
         
     report["parts_extracted_count"] = len(parts)
     report["holes_extracted_count"] = total_holes
     return parts, report
 
-def parse_dxf(file_path: str, strict: bool = False) -> List[Part]:
+def parse_dxf(file_path: str, strict: bool = False, allow_repaired_topology: bool = False) -> List[Part]:
     """
     Reads 2D boundary contours from an AutoCAD DXF file with backward-compatible API.
     If strict=True, raises DXFValidationError on fatal errors or missing parts.
     """
-    parts, report = validate_and_parse_dxf(file_path)
+    parts, report = validate_and_parse_dxf(file_path, allow_repaired_topology=allow_repaired_topology)
     if strict and (not report["is_valid"] or not parts):
         err_msg = "; ".join(report["errors"]) if report["errors"] else "Failed to parse valid DXF parts"
         raise DXFValidationError(err_msg)

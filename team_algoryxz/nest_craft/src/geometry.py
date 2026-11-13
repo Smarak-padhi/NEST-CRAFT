@@ -29,10 +29,23 @@ class Part:
             num_input_components = len(polygon.geoms) if isinstance(polygon, MultiPolygon) else 1
             num_repaired_components = len(repaired.geoms) if isinstance(repaired, (MultiPolygon, GeometryCollection)) else 1
             
+            # Count interior holes before and after repair
+            def _count_holes(geom):
+                if hasattr(geom, 'geoms'):
+                    return sum(len(g.interiors) for g in geom.geoms if hasattr(g, 'interiors'))
+                elif hasattr(geom, 'interiors'):
+                    return len(geom.interiors)
+                return 0
+                
+            num_input_holes = _count_holes(polygon)
+            num_repaired_holes = _count_holes(repaired)
+            
             topology_altered = False
             if num_repaired_components != num_input_components:
                 topology_altered = True
-            elif polygon.area > 1e-4 and abs(repaired.area - polygon.area) / polygon.area > 0.05:
+            elif num_repaired_holes != num_input_holes:
+                topology_altered = True
+            elif polygon.area > 1e-4 and abs(repaired.area - polygon.area) / polygon.area > 0.01:
                 topology_altered = True
             elif isinstance(repaired, GeometryCollection):
                 topology_altered = True
@@ -42,6 +55,7 @@ class Part:
                     f"Geometry validation failed for part '{part_id}': Input contour is self-intersecting "
                     f"and repair via make_valid materially altered topology "
                     f"(components: {num_input_components} -> {num_repaired_components}, "
+                    f"holes: {num_input_holes} -> {num_repaired_holes}, "
                     f"area: {polygon.area:.2f} -> {repaired.area:.2f}). "
                     f"Geometry must be corrected in CAD or explicitly authorized via metadata['allow_repaired_topology']=True."
                 )
