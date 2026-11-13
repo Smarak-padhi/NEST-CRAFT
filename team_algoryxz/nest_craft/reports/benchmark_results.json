@@ -1,0 +1,370 @@
+{
+  "esicup_shapes": {
+    "dataset": "ESICUP SHAPES (shapes.txt)",
+    "provenance": "Oliveira, Gomes, Ferreira (2000) OR Spektrum",
+    "total_parts": 43,
+    "sheet_size": "40.0 x 70.0",
+    "clearance": 0.5,
+    "baseline_blf": {
+      "algorithm": "Bottom-Left-Fill (BLF)",
+      "sheets_used": 2,
+      "total_parts_nested": 43,
+      "total_parts_requested": 43,
+      "unplaced_parts": 0,
+      "utilization_pct": 28.5,
+      "scrap_pct": 71.5,
+      "total_sheet_area": 5600.0,
+      "utilized_area": 1596.0,
+      "runtime_seconds": 7.879,
+      "total_linear_length_consumed": 76.25,
+      "total_linear_stock_available": 80.0,
+      "continuous_strip_utilization_pct": 29.9,
+      "final_sheet_remnant": {
+        "max_x_span": 36.25,
+        "max_y_span": 37.75,
+        "occupied_box_area": 1368.44,
+        "remnant_width": 3.75,
+        "remnant_height": 70.0,
+        "remnant_area": 262.5,
+        "remnant_pct": 9.38,
+        "is_prime_remnant": false
+      },
+      "per_sheet_metrics": [
+        {
+          "sheet_id": 1,
+          "parts_placed": 27,
+          "utilized_area": 1112.0,
+          "utilization_pct": 39.71,
+          "max_x_span": 39.75,
+          "max_y_span": 66.25,
+          "occupied_box_area": 2633.44,
+          "remnant_width": 0.25,
+          "remnant_height": 70.0,
+          "remnant_area": 17.5,
+          "remnant_pct": 0.62,
+          "is_prime_remnant": false
+        },
+        {
+          "sheet_id": 2,
+          "parts_placed": 16,
+          "utilized_area": 484.0,
+          "utilization_pct": 17.29,
+          "max_x_span": 36.25,
+          "max_y_span": 37.75,
+          "occupied_box_area": 1368.44,
+          "remnant_width": 3.75,
+          "remnant_height": 70.0,
+          "remnant_area": 262.5,
+          "remnant_pct": 9.38,
+          "is_prime_remnant": false
+        }
+      ]
+    },
+    "sa_runs": [
+      {
+        "seed": 42,
+        "sheets_used": 2,
+        "utilization_pct": 28.5,
+        "scrap_pct": 71.5,
+        "total_linear_length_consumed": 75.75,
+        "continuous_strip_utilization_pct": 30.1,
+        "final_sheet_remnant": {
+          "max_x_span": 35.75,
+          "max_y_span": 32.25,
+          "occupied_box_area": 1152.94,
+          "remnant_width": 4.25,
+          "remnant_height": 70.0,
+          "remnant_area": 297.5,
+          "remnant_pct": 10.62,
+          "is_prime_remnant": false
+        },
+        "linear_saved_mm": 0.5,
+        "runtime_seconds": 33.266,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 101,
+        "sheets_used": 2,
+        "utilization_pct": 28.5,
+        "scrap_pct": 71.5,
+        "total_linear_length_consumed": 76.25,
+        "continuous_strip_utilization_pct": 29.9,
+        "final_sheet_remnant": {
+          "max_x_span": 36.25,
+          "max_y_span": 39.25,
+          "occupied_box_area": 1422.81,
+          "remnant_width": 3.75,
+          "remnant_height": 70.0,
+          "remnant_area": 262.5,
+          "remnant_pct": 9.38,
+          "is_prime_remnant": false
+        },
+        "linear_saved_mm": 0.0,
+        "runtime_seconds": 35.281,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 202,
+        "sheets_used": 2,
+        "utilization_pct": 28.5,
+        "scrap_pct": 71.5,
+        "total_linear_length_consumed": 73.75,
+        "continuous_strip_utilization_pct": 30.92,
+        "final_sheet_remnant": {
+          "max_x_span": 33.75,
+          "max_y_span": 49.75,
+          "occupied_box_area": 1679.06,
+          "remnant_width": 6.25,
+          "remnant_height": 70.0,
+          "remnant_area": 437.5,
+          "remnant_pct": 15.62,
+          "is_prime_remnant": false
+        },
+        "linear_saved_mm": 2.5,
+        "runtime_seconds": 22.364,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 303,
+        "sheets_used": 2,
+        "utilization_pct": 28.5,
+        "scrap_pct": 71.5,
+        "total_linear_length_consumed": 73.75,
+        "continuous_strip_utilization_pct": 30.92,
+        "final_sheet_remnant": {
+          "max_x_span": 33.75,
+          "max_y_span": 29.25,
+          "occupied_box_area": 987.19,
+          "remnant_width": 6.25,
+          "remnant_height": 70.0,
+          "remnant_area": 437.5,
+          "remnant_pct": 15.62,
+          "is_prime_remnant": false
+        },
+        "linear_saved_mm": 2.5,
+        "runtime_seconds": 21.363,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 404,
+        "sheets_used": 2,
+        "utilization_pct": 28.5,
+        "scrap_pct": 71.5,
+        "total_linear_length_consumed": 74.25,
+        "continuous_strip_utilization_pct": 30.71,
+        "final_sheet_remnant": {
+          "max_x_span": 34.25,
+          "max_y_span": 37.25,
+          "occupied_box_area": 1275.81,
+          "remnant_width": 5.75,
+          "remnant_height": 70.0,
+          "remnant_area": 402.5,
+          "remnant_pct": 14.37,
+          "is_prime_remnant": false
+        },
+        "linear_saved_mm": 2.0,
+        "runtime_seconds": 20.844,
+        "utilization_gain_pct": 0.0
+      }
+    ],
+    "sa_mean_utilization": 28.5,
+    "sa_median_utilization": 28.5,
+    "sa_std_utilization": 0.0,
+    "sa_mean_gain_over_blf": 0.0,
+    "sa_mean_linear_consumed_mm": 74.75,
+    "sa_mean_linear_saved_mm": 1.5,
+    "sa_mean_strip_utilization": 30.51,
+    "sa_mean_runtime": 26.62
+  },
+  "industrial_dxf": {
+    "dataset": "Industrial DXF Mechanical Fabrication Batch",
+    "provenance": "Real industrial CAD contours (brackets, gussets, flanges, base plates)",
+    "total_parts": 17,
+    "sheet_size": "800.0 x 500.0 mm",
+    "clearance": 4.0,
+    "baseline_blf": {
+      "algorithm": "Bottom-Left-Fill (BLF)",
+      "sheets_used": 3,
+      "total_parts_nested": 17,
+      "total_parts_requested": 17,
+      "unplaced_parts": 0,
+      "utilization_pct": 46.67,
+      "scrap_pct": 53.33,
+      "total_sheet_area": 1200000.0,
+      "utilized_area": 560000.0,
+      "runtime_seconds": 0.398,
+      "total_linear_length_consumed": 2350.0,
+      "total_linear_stock_available": 2400.0,
+      "continuous_strip_utilization_pct": 47.66,
+      "final_sheet_remnant": {
+        "max_x_span": 750.0,
+        "max_y_span": 302.0,
+        "occupied_box_area": 226500.0,
+        "remnant_width": 50.0,
+        "remnant_height": 500.0,
+        "remnant_area": 25000.0,
+        "remnant_pct": 6.25,
+        "is_prime_remnant": false
+      },
+      "per_sheet_metrics": [
+        {
+          "sheet_id": 1,
+          "parts_placed": 7,
+          "utilized_area": 248200.0,
+          "utilization_pct": 62.05,
+          "max_x_span": 760.0,
+          "max_y_span": 426.0,
+          "occupied_box_area": 323760.0,
+          "remnant_width": 40.0,
+          "remnant_height": 500.0,
+          "remnant_area": 20000.0,
+          "remnant_pct": 5.0,
+          "is_prime_remnant": false
+        },
+        {
+          "sheet_id": 2,
+          "parts_placed": 7,
+          "utilized_area": 187600.0,
+          "utilization_pct": 46.9,
+          "max_x_span": 734.0,
+          "max_y_span": 406.0,
+          "occupied_box_area": 298004.0,
+          "remnant_width": 66.0,
+          "remnant_height": 500.0,
+          "remnant_area": 33000.0,
+          "remnant_pct": 8.25,
+          "is_prime_remnant": false
+        },
+        {
+          "sheet_id": 3,
+          "parts_placed": 3,
+          "utilized_area": 124200.0,
+          "utilization_pct": 31.05,
+          "max_x_span": 750.0,
+          "max_y_span": 302.0,
+          "occupied_box_area": 226500.0,
+          "remnant_width": 50.0,
+          "remnant_height": 500.0,
+          "remnant_area": 25000.0,
+          "remnant_pct": 6.25,
+          "is_prime_remnant": false
+        }
+      ]
+    },
+    "sa_runs": [
+      {
+        "seed": 42,
+        "sheets_used": 3,
+        "utilization_pct": 46.67,
+        "scrap_pct": 53.33,
+        "total_linear_length_consumed": 1966.0,
+        "continuous_strip_utilization_pct": 56.97,
+        "final_sheet_remnant": {
+          "max_x_span": 366.0,
+          "max_y_span": 222.0,
+          "occupied_box_area": 81252.0,
+          "remnant_width": 434.0,
+          "remnant_height": 500.0,
+          "remnant_area": 217000.0,
+          "remnant_pct": 54.25,
+          "is_prime_remnant": true
+        },
+        "linear_saved_mm": 384.0,
+        "runtime_seconds": 2.371,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 101,
+        "sheets_used": 3,
+        "utilization_pct": 46.67,
+        "scrap_pct": 53.33,
+        "total_linear_length_consumed": 2110.0,
+        "continuous_strip_utilization_pct": 53.08,
+        "final_sheet_remnant": {
+          "max_x_span": 510.0,
+          "max_y_span": 302.0,
+          "occupied_box_area": 154020.0,
+          "remnant_width": 290.0,
+          "remnant_height": 500.0,
+          "remnant_area": 145000.0,
+          "remnant_pct": 36.25,
+          "is_prime_remnant": true
+        },
+        "linear_saved_mm": 240.0,
+        "runtime_seconds": 2.198,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 202,
+        "sheets_used": 3,
+        "utilization_pct": 46.67,
+        "scrap_pct": 53.33,
+        "total_linear_length_consumed": 1742.0,
+        "continuous_strip_utilization_pct": 64.29,
+        "final_sheet_remnant": {
+          "max_x_span": 142.0,
+          "max_y_span": 302.0,
+          "occupied_box_area": 42884.0,
+          "remnant_width": 658.0,
+          "remnant_height": 500.0,
+          "remnant_area": 329000.0,
+          "remnant_pct": 82.25,
+          "is_prime_remnant": true
+        },
+        "linear_saved_mm": 608.0,
+        "runtime_seconds": 2.104,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 303,
+        "sheets_used": 3,
+        "utilization_pct": 46.67,
+        "scrap_pct": 53.33,
+        "total_linear_length_consumed": 1986.0,
+        "continuous_strip_utilization_pct": 56.39,
+        "final_sheet_remnant": {
+          "max_x_span": 386.0,
+          "max_y_span": 252.0,
+          "occupied_box_area": 97272.0,
+          "remnant_width": 414.0,
+          "remnant_height": 500.0,
+          "remnant_area": 207000.0,
+          "remnant_pct": 51.75,
+          "is_prime_remnant": true
+        },
+        "linear_saved_mm": 364.0,
+        "runtime_seconds": 2.386,
+        "utilization_gain_pct": 0.0
+      },
+      {
+        "seed": 404,
+        "sheets_used": 3,
+        "utilization_pct": 46.67,
+        "scrap_pct": 53.33,
+        "total_linear_length_consumed": 1926.0,
+        "continuous_strip_utilization_pct": 58.15,
+        "final_sheet_remnant": {
+          "max_x_span": 326.0,
+          "max_y_span": 302.0,
+          "occupied_box_area": 98452.0,
+          "remnant_width": 474.0,
+          "remnant_height": 500.0,
+          "remnant_area": 237000.0,
+          "remnant_pct": 59.25,
+          "is_prime_remnant": true
+        },
+        "linear_saved_mm": 424.0,
+        "runtime_seconds": 2.084,
+        "utilization_gain_pct": 0.0
+      }
+    ],
+    "sa_mean_utilization": 46.67,
+    "sa_median_utilization": 46.67,
+    "sa_std_utilization": 0.0,
+    "sa_mean_gain_over_blf": 0.0,
+    "sa_mean_linear_consumed_mm": 1946.0,
+    "sa_mean_linear_saved_mm": 404.0,
+    "sa_mean_strip_utilization": 57.78,
+    "sa_mean_runtime": 2.23
+  }
+}
