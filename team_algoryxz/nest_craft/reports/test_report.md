@@ -8,7 +8,7 @@
 
 ## 1. UNIT TEST SUITE EXECUTION SUMMARY
 
-The test suite in [`test_nesting.py`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/tests/test_nesting.py) verifies all core geometric primitives, boundary constraints, and financial calculations:
+The test suite in [`test_nesting.py`](../tests/test_nesting.py) verifies all core geometric primitives, boundary constraints, and financial calculations:
 
 ```
 Ran 7 tests in 0.069s

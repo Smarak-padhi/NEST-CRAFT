@@ -71,20 +71,20 @@ Generated 16 reproducible CAD edge-case files in `team_algoryxz/nest_craft/data/
 15. `case15_dxf_version_r12.dxf`: Legacy AutoCAD R12 format (`AC1009`) with `POLYLINE`.
 16. `case16_dxf_version_r2018.dxf`: Modern AutoCAD 2018 format (`AC1032`) with `LWPOLYLINE`.
 
-*Deliverable:* Documented in [`reports/SYNTHETIC_DXF_TEST_MATRIX.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/SYNTHETIC_DXF_TEST_MATRIX.md) and automated via 16 tests in `tests/test_dxf_corpus.py`.
+*Deliverable:* Documented in [`reports/SYNTHETIC_DXF_TEST_MATRIX.md`](./SYNTHETIC_DXF_TEST_MATRIX.md) and automated via 16 tests in `tests/test_dxf_corpus.py`.
 
 ---
 
 ### 4. Task 4: DXF Export Interoperability & CAM Protocol
 
 * **Representative Export Artifacts:** Generated 6 structurally validated DXF layouts in `team_algoryxz/nest_craft/data/cam_export_samples/` covering rectangular parts, concave L-brackets, multipart geometry, cutouts/holes, part-in-part cavity nesting, and multi-sheet layouts.
-* **CAM Protocol SOP:** Authored [`reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md) defining exact procedures for layer mapping (`SHEET_BOUNDARY`, `CUT_CONTOUR`, `HOLE_CONTOUR`, `PART_IN_PART_CHILD`), dimensional scale checks, pierce order prioritization, and micro-tab assignment in external CAM software.
+* **CAM Protocol SOP:** Authored [`reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](./CAM_INTEROPERABILITY_TEST_PROTOCOL.md) defining exact procedures for layer mapping (`SHEET_BOUNDARY`, `CUT_CONTOUR`, `HOLE_CONTOUR`, `PART_IN_PART_CHILD`), dimensional scale checks, pierce order prioritization, and micro-tab assignment in external CAM software.
 
 ---
 
 ### 5. Task 5: Fabricator Validation Package
 
-* Authored [`reports/FABRICATOR_FEEDBACK_TEMPLATE.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/FABRICATOR_FEEDBACK_TEMPLATE.md) containing:
+* Authored [`reports/FABRICATOR_FEEDBACK_TEMPLATE.md`](./FABRICATOR_FEEDBACK_TEMPLATE.md) containing:
   1. Plain-language summary of what NEST-CRAFT does (packing, compaction, prime remnant recovery, part-in-part cavity nesting).
   2. Strict disclaimer of what it DOES NOT do (no G-code, no machine toolpaths, no micro-tabs, no kerf offset compensation).
   3. Operating guide for CAD diagnostics and remnant measurement.

@@ -292,9 +292,69 @@ def test_compute_boundary_deviation_valid_polygon_and_multipolygon_behavior():
     dist_mp = compute_boundary_deviation(mp1, mp2)
     assert isinstance(dist_mp, float) and dist_mp > 0.0
 
-    # Polygon to pure polygonal GeometryCollection
-    dist_gc = compute_boundary_deviation(p1, gc_pure)
-    assert isinstance(dist_gc, float) and dist_gc == 2.0
+    # Polygon to pure polygonal GeometryCollection (valid disjoint)
+    p_disjoint = Polygon([(20, 20), (30, 20), (30, 30), (20, 30)])
+    gc_disjoint = GeometryCollection([p1, p_disjoint])
+    dist_gc = compute_boundary_deviation(p1, gc_disjoint)
+    assert isinstance(dist_gc, float) and dist_gc > 0.0
+
+def test_compute_boundary_deviation_pure_polygonal_overlapping_rejected():
+    """Verify pure polygonal GeometryCollection with overlapping components is rejected."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    p2 = Polygon([(5, 5), (15, 5), (15, 15), (5, 15)])
+    gc = GeometryCollection([p1, p2])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(p1, gc, fail_closed=True)
+    assert "overlapping or nested" in str(exc.value)
+    assert compute_boundary_deviation(p1, gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_pure_polygonal_duplicate_rejected():
+    """Verify pure polygonal GeometryCollection with duplicate components is rejected."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    gc = GeometryCollection([p1, p1])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(p1, gc, fail_closed=True)
+    assert "duplicate" in str(exc.value)
+    assert compute_boundary_deviation(p1, gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_pure_polygonal_nested_rejected():
+    """Verify pure polygonal GeometryCollection with nested components is rejected."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    p_nested = Polygon([(2, 2), (8, 2), (8, 8), (2, 8)])
+    gc = GeometryCollection([p1, p_nested])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(p1, gc, fail_closed=True)
+    assert "overlapping or nested" in str(exc.value)
+    assert compute_boundary_deviation(p1, gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_pure_polygonal_shared_edge_invalid_topology_rejected():
+    """Verify pure polygonal GeometryCollection with shared edge (invalid MultiPolygon topology) is rejected."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    p_shared = Polygon([(10, 0), (20, 0), (20, 10), (10, 10)])
+    gc = GeometryCollection([p1, p_shared])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(p1, gc, fail_closed=True)
+    assert "invalid MultiPolygon topology" in str(exc.value)
+    assert compute_boundary_deviation(p1, gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_pure_polygonal_empty_component_rejected():
+    """Verify pure polygonal GeometryCollection with empty Polygon is rejected."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    gc = GeometryCollection([p1, Polygon()])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(p1, gc, fail_closed=True)
+    assert "empty" in str(exc.value)
+    assert compute_boundary_deviation(p1, gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_pure_polygonal_invalid_component_rejected():
+    """Verify pure polygonal GeometryCollection with invalid (self-intersecting) Polygon is rejected."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    p_invalid = Polygon([(0, 0), (10, 10), (0, 10), (10, 0)])
+    gc = GeometryCollection([p1, p_invalid])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(p1, gc, fail_closed=True)
+    assert "invalid" in str(exc.value)
+    assert compute_boundary_deviation(p1, gc, fail_closed=False) == float('inf')
 
 def test_part_validation_record_active_overrides_tracking():
     """Verify Part.validation_record accurately tracks active unsafe overrides."""

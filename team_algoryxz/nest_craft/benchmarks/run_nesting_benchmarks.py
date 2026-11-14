@@ -165,7 +165,7 @@ def benchmark_industrial_dxf_instance(seeds=[42, 101, 202, 303, 404]):
     
     summary = {
         "dataset": "Industrial DXF Mechanical Fabrication Batch",
-        "provenance": "Real industrial CAD contours (brackets, gussets, flanges, base plates)",
+        "provenance": "Synthetic parametric CAD contours (brackets, gussets, flanges, base plates) generated for mechanical fabrication testing",
         "total_parts": total_parts,
         "sheet_size": f"{sheet_w} x {sheet_h} mm",
         "clearance": clearance,

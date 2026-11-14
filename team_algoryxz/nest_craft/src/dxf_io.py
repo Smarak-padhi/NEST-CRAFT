@@ -109,37 +109,146 @@ def parse_esicup_txt(file_path: str, allow_repaired_topology: bool = False) -> T
                 continue
             i += 1
             
-        if len(coords) >= 3:
-            # Check for multiple closed sub-loops in vertex stream (e.g. multipart shapes in ESICUP)
-            sub_loops = []
-            curr_loop = []
-            for pt in coords:
-                curr_loop.append(pt)
-                if len(curr_loop) >= 4 and pt == curr_loop[0]:
-                    sub_loops.append(curr_loop)
-                    curr_loop = []
-            if curr_loop:
-                if sub_loops:
-                    sub_loops.append(curr_loop)
-                else:
-                    sub_loops = [curr_loop]
-            
-            if len(sub_loops) > 1:
-                polys = [Polygon(sl) for sl in sub_loops if len(sl) >= 3]
-                valid_sub = [p for p in polys if p.is_valid and p.area > 1e-4]
-                if len(valid_sub) == len(polys) and len(valid_sub) > 0:
-                    poly = MultiPolygon(valid_sub) if len(valid_sub) > 1 else valid_sub[0]
-                else:
-                    poly = Polygon(coords)
-            else:
-                poly = Polygon(coords)
+        if len(coords) < 3:
+            metadata["is_valid"] = False
+            err = f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}' has fewer than 3 vertices ({len(coords)} found)."
+            metadata["errors"].append(err)
+            raise CADTopologyError(err)
 
-            meta = {
-                "source_file": os.path.basename(file_path),
-                "piece_index": idx + 1,
-                "allow_repaired_topology": allow_repaired_topology
-            }
-            parts.append(Part(poly, part_id=f"piece_{idx+1}", quantity=qty, metadata=meta))
+        # Check for multiple closed sub-loops in vertex stream (e.g. multipart shapes or holes in ESICUP)
+        sub_loops = []
+        curr_loop = []
+        for pt in coords:
+            curr_loop.append(pt)
+            if len(curr_loop) >= 4 and pt == curr_loop[0]:
+                sub_loops.append(curr_loop)
+                curr_loop = []
+
+        if curr_loop:
+            if not sub_loops:
+                # Single loop without explicit closing vertex (standard ESICUP like shapes.txt)
+                sub_loops = [curr_loop]
+            else:
+                # An unclosed sequence following one or more closed sub-loops
+                metadata["is_valid"] = False
+                err = (
+                    f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                    f"Contains unclosed final sub-loop ({len(curr_loop)} vertices). "
+                    "In multipart contours, all sub-loops must be explicitly closed."
+                )
+                metadata["errors"].append(err)
+                raise CADTopologyError(err)
+
+        loop_polys = []
+        for l_idx, sl in enumerate(sub_loops):
+            # Check unique vertices (excluding closing vertex if present)
+            unique_pts = list(dict.fromkeys(sl[:-1] if sl[0] == sl[-1] else sl))
+            if len(unique_pts) < 3:
+                metadata["is_valid"] = False
+                err = (
+                    f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                    f"Sub-loop {l_idx+1} is degenerate with only {len(unique_pts)} unique vertices."
+                )
+                metadata["errors"].append(err)
+                raise CADTopologyError(err)
+
+            p_cand = Polygon(sl)
+            if p_cand.area <= 1e-4:
+                metadata["is_valid"] = False
+                err = (
+                    f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                    f"Sub-loop {l_idx+1} validation failed: sub-loop has zero or sub-threshold area ({p_cand.area:.6f} mm²), "
+                    "self-intersecting contour, or invalid planar topology."
+                )
+                metadata["errors"].append(err)
+                raise CADTopologyError(err)
+
+            if not p_cand.is_valid:
+                if not allow_repaired_topology:
+                    metadata["is_valid"] = False
+                    err = (
+                        f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                        f"Sub-loop {l_idx+1} validation failed: input contour is self-intersecting or has invalid topology. "
+                        "Repair geometry in CAD or explicitly authorize via allow_repaired_topology=True."
+                    )
+                    metadata["errors"].append(err)
+                    raise CADTopologyError(err)
+
+            loop_polys.append(p_cand)
+
+        if len(loop_polys) == 1:
+            poly = loop_polys[0]
+        else:
+            # Check pairwise duplicate, overlap, or crossing
+            for i_a in range(len(loop_polys)):
+                for i_b in range(i_a + 1, len(loop_polys)):
+                    p_a = loop_polys[i_a]
+                    p_b = loop_polys[i_b]
+                    if p_a.equals(p_b):
+                        metadata["is_valid"] = False
+                        err = f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': Contains duplicate sub-loops."
+                        metadata["errors"].append(err)
+                        raise CADTopologyError(err)
+                    inter = p_a.intersection(p_b)
+                    if not inter.is_empty and inter.area > 1e-4:
+                        if not (p_a.contains(p_b) or p_b.contains(p_a)):
+                            metadata["is_valid"] = False
+                            err = (
+                                f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                                f"Sub-loops {i_a+1} and {i_b+1} intersect or partially overlap."
+                            )
+                            metadata["errors"].append(err)
+                            raise CADTopologyError(err)
+
+            # Sort descending by area to establish containment hierarchy
+            sorted_loops = sorted(loop_polys, key=lambda p: p.area, reverse=True)
+            parents = {}
+            for i_c, p_child in enumerate(sorted_loops):
+                p_idx = None
+                min_area = float('inf')
+                for i_p, p_parent in enumerate(sorted_loops):
+                    if i_c != i_p and p_parent.area > p_child.area and p_parent.contains(p_child):
+                        if p_parent.area < min_area:
+                            min_area = p_parent.area
+                            p_idx = i_p
+                parents[i_c] = p_idx
+
+            depths = {}
+            for i_c in range(len(sorted_loops)):
+                d = 0
+                curr = parents[i_c]
+                while curr is not None:
+                    d += 1
+                    curr = parents[curr]
+                depths[i_c] = d
+
+            solid_polys = []
+            for i_s, depth in depths.items():
+                if depth % 2 == 0:
+                    child_holes = [
+                        sorted_loops[h_idx].exterior.coords 
+                        for h_idx, h_depth in depths.items() 
+                        if h_depth == depth + 1 and parents[h_idx] == i_s
+                    ]
+                    solid_poly = Polygon(sorted_loops[i_s].exterior.coords, child_holes)
+                    solid_polys.append(solid_poly)
+
+            if len(solid_polys) == 1:
+                poly = solid_polys[0]
+            elif len(solid_polys) > 1:
+                poly = MultiPolygon(solid_polys)
+            else:
+                metadata["is_valid"] = False
+                err = f"ESICUP piece 'piece_{idx+1}' contains no solid polygonal area."
+                metadata["errors"].append(err)
+                raise CADTopologyError(err)
+
+        meta = {
+            "source_file": os.path.basename(file_path),
+            "piece_index": idx + 1,
+            "allow_repaired_topology": allow_repaired_topology
+        }
+        parts.append(Part(poly, part_id=f"piece_{idx+1}", quantity=qty, metadata=meta))
             
     metadata["total_pieces_extracted"] = len(parts)
     metadata["total_quantity"] = sum(p.quantity for p in parts)

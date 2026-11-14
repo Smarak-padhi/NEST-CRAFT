@@ -1,6 +1,6 @@
 # NEST-CRAFT — Project Status & Handover Ledger
 
-**Current Engineering Stage:** Stage G.1 Completed & Verified (GeometryCollection Integrity Closure & Strict Component Validation)  
+**Current Engineering Stage:** Stage G.2 Completed & Verified (Parser Integrity & Documentation Closure)  
 **Last Audit Date:** 2026-11-14  
 **Repository Branch:** `main`
 
@@ -10,8 +10,8 @@
 
 | Dimension | Current State | Verifiable Evidence |
 | :--- | :---: | :--- |
-| **Automated Tests** | **121 / 121 Passing** (100%) | Verified via pytest in clean repository root (across 12 test suites). |
-| **Geometry Engine** | **Strict Fail-Closed & Hardened** | `compute_boundary_deviation` strictly validates runtime types, rejects non-polygonal or empty components in `GeometryCollection`s, and flattens pure polygonal collections. `Part.__init__` rejects non-polygonal or sub-threshold components unless explicitly authorized via `metadata['allow_feature_loss']=True`. |
+| **Automated Tests** | **138 / 138 Passing** (100%) | Verified via pytest in clean repository root (across 13 test suites). |
+| **Geometry Engine** | **Strict Fail-Closed & Hardened** | `compute_boundary_deviation` strictly validates runtime types, rejects non-polygonal or empty components in `GeometryCollection`s, validates pure polygonal collections against overlaps, duplicates, nesting, and invalid MultiPolygon topologies, and safely flattens valid disjoint collections. `Part.__init__` rejects non-polygonal or sub-threshold components unless explicitly authorized via `metadata['allow_feature_loss']=True` and enforces valid `MultiPolygon` construction. |
 | **Optimization Core** | **BLF & SA Operational** | BLF baseline and Simulated Annealing with Part-in-Part cavity nesting verified across fixed seeds. |
 | **Benchmark Status** | **Locked & Proven** | Dedicated reproducibility test (`test_benchmark_reproducibility.py`) permanently locks the 17-part, 5-seed orthogonal baseline at **1,946.00 mm** (-17.19% compaction, 3 discrete sheets). |
 | **CAD / DXF Ingestion** | **16-Case Test Corpus** | Evaluated against 16 synthetic edge cases in `SYNTHETIC_DXF_TEST_MATRIX.md` (splines, bulges, open contours, nested holes, narrow slots, large coordinates, R12/R2018). |
@@ -67,11 +67,17 @@
 - **Real-World Intake Framework:** Established 10-step customer drawing intake SOP (`REAL_WORLD_DXF_INTAKE_PROCESS.md`) and unpopulated living case matrix (`REAL_WORLD_DXF_TEST_MATRIX.md`).
 - **Ingestion Override Tracking:** Surfaced active CAD safety overrides in validation reports and Streamlit dashboard.
 
-### Stage G.1: GeometryCollection Integrity Closure & Strict Component Validation (Current Baseline)
+### Stage G.1: GeometryCollection Integrity Closure & Strict Component Validation
 - **GeometryCollection Integrity Closure:** Enforced fail-closed rejection in `compute_boundary_deviation()` for repaired `GeometryCollection`s containing non-polygonal (`LineString`, `Point`) or empty components. Pure polygonal collections are safely flattened into `MultiPolygon` and measured.
 - **Strict Component Rejection in `Part.__init__`:** Prohibited silent omission of non-polygonal elements or sub-threshold polygons (area $\le 10^{-4}\text{ mm}^2$). Explicitly requires `metadata['allow_feature_loss']=True` to authorize omission of non-nestable components.
 - **Multi-Loop ESICUP Parsing:** Enabled closed sub-loop parsing in `parse_esicup_txt` to construct genuine `MultiPolygon` parts directly from vertex coordinates without artificial self-intersections.
 - **Total Test Count:** **121 / 121 tests passing** across 12 test suites.
+
+### Stage G.2: Parser Integrity & Documentation Closure (Current Baseline)
+- **Hardened ESICUP Multi-Loop Parser:** Eliminated silent fallback in `parse_esicup_txt()`. Enforced strict fail-closed rejection with clear diagnostics for unclosed final loops, malformed/self-intersecting loops, degenerate loops (<3 unique vertices), zero-area loops, overlapping/intersecting sub-loops, and duplicate sub-loops. Concentric loops are topologically nested as interior holes while disjoint loops become native `MultiPolygon`s.
+- **Pure Polygonal GeometryCollection Validation:** Enforced strict fail-closed rejection in `compute_boundary_deviation()` for overlapping components, duplicate components, nested components, invalid resulting `MultiPolygon` topologies (such as shared edges), empty polygons, and invalid polygons.
+- **Documentation & Link Hygiene:** Eliminated all absolute Windows `file:///` links across all active project reports, reconciled regression-test accounting, rigorously defined plate remnant categories (geometric unnested margin vs. prime remnant vs. offcut scrap), and corrected benchmark dataset provenance.
+- **Total Test Count:** **138 / 138 tests passing** across 13 test suites.
 
 ---
 

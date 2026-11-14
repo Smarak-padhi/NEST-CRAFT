@@ -3,7 +3,7 @@
 **Team Algoryxz · Odisha AI Hackathon 2026**
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-121%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
+[![Tests Passing](https://img.shields.io/badge/tests-138%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
 [![Prototype Status](https://img.shields.io/badge/status-Hackathon%20Demo%20Ready-orange.svg)](docs/PROJECT_STATUS.md)
 
 NEST-CRAFT is a Python and Streamlit engineering prototype designed to optimize 2D irregular sheet-metal nesting for manufacturing fabrication. It ingests CAD/DXF profiles, models complex polygonal parts and interior apertures using Shapely, executes heuristic Bottom-Left-Fill (BLF) and Simulated Annealing (SA) optimization, enables Part-in-Part cavity nesting, and exports multi-layer AutoCAD R2010 DXF files for downstream CAM toolpath generation.
@@ -31,7 +31,7 @@ NEST-CRAFT was engineered as an open research and engineering prototype to explo
 - **CAD I/O Interchange:** [ezdxf 1.4](https://ezdxf.mozman.at/) (AutoCAD R2010 DXF parsing, entity tessellation, topological loop extraction, and structured layer generation).
 - **Optimization Algorithms:** Python 3.12 standard library & NumPy (Bottom-Left-Fill heuristic, Simulated Annealing with adaptive cooling, sequence permutations, and grain direction filters).
 - **Interactive UI Dashboard:** [Streamlit 1.43](https://streamlit.io/) with Matplotlib (real-time multi-sheet CAD layout preview, remnant intelligence cards, and DXF downloaders).
-- **Automated Test Suite:** [pytest 8.3](https://docs.pytest.org/) (121 unit, integration, adversarial stress, and geometry conservation tests).
+- **Automated Test Suite:** [pytest 8.3](https://docs.pytest.org/) (138 unit, integration, adversarial stress, and geometry conservation tests).
 
 ---
 
@@ -157,6 +157,7 @@ When 3 discrete plates are consumed, 3 plates remain physically required. Fracti
 | **Stage F** | Reliability Hardening & Real-World Validation Preparation | [`STAGE_F_IMPLEMENTATION_REPORT.md`](team_algoryxz/nest_craft/reports/STAGE_F_IMPLEMENTATION_REPORT.md), [`SYNTHETIC_DXF_TEST_MATRIX.md`](team_algoryxz/nest_craft/reports/SYNTHETIC_DXF_TEST_MATRIX.md), [`CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](team_algoryxz/nest_craft/reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md), [`FABRICATOR_FEEDBACK_TEMPLATE.md`](team_algoryxz/nest_craft/reports/FABRICATOR_FEEDBACK_TEMPLATE.md) |
 | **Stage G** | Runtime Type Validation, CI Workflow & Intake Process | [`STAGE_G_IMPLEMENTATION_REPORT.md`](team_algoryxz/nest_craft/reports/STAGE_G_IMPLEMENTATION_REPORT.md), [`REAL_WORLD_DXF_INTAKE_PROCESS.md`](team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_INTAKE_PROCESS.md), [`REAL_WORLD_DXF_TEST_MATRIX.md`](team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_TEST_MATRIX.md) |
 | **Stage G.1** | GeometryCollection Integrity Closure & Strict Component Validation | [`compute_boundary_deviation`](team_algoryxz/nest_craft/src/geometry.py), [`test_fail_closed_geometry.py`](team_algoryxz/nest_craft/tests/test_fail_closed_geometry.py) |
+| **Stage G.2** | Parser Integrity & Documentation Closure | [`parse_esicup_txt`](team_algoryxz/nest_craft/src/dxf_io.py), [`test_esicup_multiloop.py`](team_algoryxz/nest_craft/tests/test_esicup_multiloop.py), [`test_fail_closed_geometry.py`](team_algoryxz/nest_craft/tests/test_fail_closed_geometry.py) |
 
 For complete documentation, refer to:
 - [Developer Onboarding Guide](docs/DEVELOPER_ONBOARDING.md)

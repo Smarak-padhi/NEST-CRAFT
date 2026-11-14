@@ -60,7 +60,7 @@ NVIDIA SkillSpector was installed in Stage B as an offline AST security inspecti
 In the initial Stage C report draft, an attribution error occurred regarding the origin of the adapted engineering skills:
 
 - **Audit Discrepancy:** The initial draft mistakenly cited `antigravity-awesome-skills` as the source of the Fowler and Ousterhout engineering skills.
-- **Fact-Checked Correction:** As thoroughly documented in Stage A ([SKILLS_AUDIT.md](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/SKILLS_AUDIT.md) and [SKILLS_INSTALL_MANIFEST.md](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/SKILLS_INSTALL_MANIFEST.md)):
+- **Fact-Checked Correction:** As thoroughly documented in Stage A ([SKILLS_AUDIT.md](./SKILLS_AUDIT.md) and [SKILLS_INSTALL_MANIFEST.md](./SKILLS_INSTALL_MANIFEST.md)):
   - The Fowler (`refactoring`) and Ousterhout (`a-philosophy-of-software-design`) rules were extracted and adapted from **`ciembor/agent-rules-books`** (Commit `893a88a6`).
   - **`antigravity-awesome-skills`** was an external repository candidate evaluated during Stage A and **REJECTED / NOT INSTALLED** due to unverified community dependencies.
 

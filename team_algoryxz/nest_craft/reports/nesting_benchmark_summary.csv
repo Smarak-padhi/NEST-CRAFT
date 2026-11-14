@@ -1,3 +1,3 @@
 Instance,Total_Parts,Sheet_Dimensions,BLF_Sheets,BLF_Discrete_Util_Pct,BLF_Linear_Consumed_mm,BLF_Strip_Util_Pct,BLF_Remnant_Width_mm,SA_Sheets,SA_Discrete_Util_Pct,SA_Linear_Consumed_mm,SA_Linear_Saved_mm,SA_Linear_Compaction_Pct,SA_Strip_Util_Pct,SA_Remnant_Width_mm,SA_Prime_Remnant_Saved,BLF_Runtime_Sec,SA_Mean_Runtime_Sec
-ESICUP SHAPES (shapes.txt),43,40.0 x 70.0,2,28.5,77.75,29.32,2.25,2,28.5,75.15,2.6,3.34,30.34,4.25,False,10.609,47.47
-Industrial DXF Mechanical Fabrication Batch,17,800.0 x 500.0 mm,3,46.67,2350.0,47.66,50.0,3,46.67,1946.0,404.0,17.19,57.78,434.0,True,1.716,7.25
+ESICUP SHAPES (shapes.txt),43,40.0 x 70.0,2,28.5,77.75,29.32,2.25,2,28.5,75.15,2.6,3.34,30.34,4.25,False,3.91,29.74
+Industrial DXF Mechanical Fabrication Batch,17,800.0 x 500.0 mm,3,46.67,2350.0,47.66,50.0,3,46.67,1946.0,404.0,17.19,57.78,434.0,True,0.507,2.99

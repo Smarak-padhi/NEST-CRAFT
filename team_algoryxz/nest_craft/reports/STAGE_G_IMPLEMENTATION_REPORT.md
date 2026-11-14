@@ -32,7 +32,11 @@ Stage G and G.1 harden the engineering foundation of NEST-CRAFT without expandin
 * **Component Retention & Sub-Threshold Validation (`Part.__init__`):** `Part.__init__` prohibits silent omission of non-polygonal components or sub-threshold polygons (area $\le 10^{-4}\text{ mm}^2$). If repair creates non-nestable components, the part is rejected by default with `CADTopologyError` unless explicitly authorized via `metadata['allow_feature_loss']=True`. Active overrides are recorded and never mask unverifiable geometry.
 * **Multi-Loop Parsing (`parse_esicup_txt`):** Ingests consecutive closed sub-loops as native `MultiPolygon`s directly from vertex coordinates, preventing artificial self-intersections.
 * **Fail-Closed Hausdorff Computation:** Checks boundaries for `None` or emptiness, computes `orig_b.hausdorff_distance(rep_b)`, and verifies that the resulting distance is finite. If NaN, Inf, or a GEOS internal exception occurs, raises `GeometryComparisonError`.
-* **Regression Testing:** `tests/test_fail_closed_geometry.py` includes 20 comprehensive unit tests covering unsupported types, non-polygonal collections, empty elements, multi-component collections, sub-threshold components, and active override tracking. Total test suite stands at 121 passing tests.
+* **Regression Testing & Test Count Reconciliation:**
+  - *Stage G Baseline:* 13 unit tests in `test_fail_closed_geometry.py`.
+  - *Stage G.1 Refactoring:* Removed 2 permissive/obsolete tests (`test_compute_boundary_deviation_mixed_geometry_collection_handled` and `test_compute_boundary_deviation_valid_pairs_supported`).
+  - *Stage G.1 Additions:* Added 8 new fail-closed tests covering non-polygonal elements, points, empty linestrings, unsupported types, tiny polygon components, and feature-loss rejection, plus 1 comprehensive updated test for valid pairs (9 enumerated test cases reviewed in Stage G.1 PR), bringing `test_fail_closed_geometry.py` to exactly $13 - 2 + 9 = 20$ unit tests. Total test suite reached 121 passing tests.
+  - *Stage G.2 Hardening:* Added 6 pure polygonal GeometryCollection tests in `test_fail_closed_geometry.py` (total 26 tests) and 11 multi-loop ESICUP parsing tests in `test_esicup_multiloop.py`, expanding the full test suite to 138 passing tests.
 
 ### Task 2 — Synthetic Corpus Provenance & Case 11 Audit
 * **File Renaming:** Renamed `reports/REAL_WORLD_DXF_TEST_MATRIX.md` to `reports/SYNTHETIC_DXF_TEST_MATRIX.md`. Updated references across `README.md`, `docs/PROJECT_STATUS.md`, and `reports/STAGE_F_IMPLEMENTATION_REPORT.md`.
@@ -46,13 +50,17 @@ Stage G and G.1 harden the engineering foundation of NEST-CRAFT without expandin
   ```
 * Updated `test_dxf_corpus.py::test_corpus_case11_unsupported_3d` to assert that both `3DFACE` and `MESH` warnings are emitted.
 
-### Task 3 — Benchmark Claims Calibration
+### Task 3 — Benchmark Claims Calibration & Remnant Accounting Rigor
 * Audited `reports/FABRICATOR_FEEDBACK_TEMPLATE.md` and `README.md`.
 * Framed the 17-part, $800 \times 500\text{ mm}$ stock, $4.0\text{ mm}$ torch clearance, 5 fixed seeds (`[42, 101, 202, 303, 404]`) result strictly as:
   - **BLF Baseline (Mean):** $2,350.00\text{ mm}$ linear extent, $3\text{ discrete sheets}$ consumed.
   - **Simulated Annealing Orthogonal (Mean):** $1,946.00\text{ mm}$ linear extent, $3\text{ discrete sheets}$ consumed.
   - **Net Compaction:** Exactly $-17.19\%$ linear cutting extent compaction along the partially filled third sheet.
 * **Prominent Disclosures:** Disclosed that both algorithms consumed exactly 3 plates (zero discrete plate reduction), and that linear extent compaction is **NOT** evidence of fewer purchased sheets, higher overall sheet utilization, material or financial savings, scrap resale value, or generalized production cycle time improvements.
+* **Rigorous Classification of Plate Remnants & Material States:**
+  - *Geometric Unnested Plate Margin:* The residual unallocated linear span along the final partially filled stock plate ($800\text{ mm} - 346\text{ mm} = 454\text{ mm}$ theoretical maximum, or $434\text{ mm}$ with torch clearance). This represents layout compaction only and cannot be described as a commercially reusable plate without physical fabrication qualification.
+  - *Prime Reusable Remnant Plate:* A contiguous, rectangular, defect-free plate section exceeding minimum shop utility dimensions ($\ge 300 \times 300\text{ mm}$ or user-defined shop thresholds) that has been physically severed, deburred, squared, inspected, and cataloged into secondary production inventory.
+  - *Offcut Scrap:* Internal skeleton webbings, piercing burnouts, non-rectangular offcuts, and perimeter margins that cannot accommodate standard structural components and are destined exclusively for scrap melt recycling.
 
 ### Task 4 — Visibility for Unsafe Geometry Overrides
 * Audited `allow_repaired_topology`, `allow_unverifiable_geometry`, and `allow_feature_loss`.
@@ -103,7 +111,7 @@ Stage G and G.1 harden the engineering foundation of NEST-CRAFT without expandin
   ```
 
 ### Task 6 — Real-World DXF Intake Process & Empty Register
-* Authored [`REAL_WORLD_DXF_INTAKE_PROCESS.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_INTAKE_PROCESS.md) defining the 10-step lifecycle:
+* Authored [`REAL_WORLD_DXF_INTAKE_PROCESS.md`](./REAL_WORLD_DXF_INTAKE_PROCESS.md) defining the 10-step lifecycle:
   1. Fabricator Permission & IP Authorization
   2. Provenance Documentation (shop type, machine type, CAD system)
   3. Cryptographic Hash of pristine original (SHA-256)
@@ -147,7 +155,7 @@ Instance: Industrial DXF Mechanical Fabrication Batch (17 parts, 800 x 500 mm st
     Seed 303: Sheets=3, Linear=1986.0 mm (-364.0 mm)
     Seed 404: Sheets=3, Linear=1926.0 mm (-424.0 mm)
     Mean:     Sheets=3, Linear=1946.00 mm (-404.00 mm / -17.19% compaction)
-    Usable Remnant Width (Mean): 434.00 mm (True prime remnant recovered)
+    Geometric Unnested Plate Margin (Mean): 434.00 mm (Geometric unnested plate margin along partially filled 3rd sheet; commercial usability subject to physical shop validation)
 ```
 
 ---

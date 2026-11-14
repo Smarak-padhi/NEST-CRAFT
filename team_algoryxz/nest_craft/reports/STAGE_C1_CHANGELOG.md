@@ -28,7 +28,7 @@ Dated backups of the original Stage C reports were created prior to modification
 - **Distinction Between Single-Seed Anomalies and Multi-Seed Means:** Clarified that while Seed 42 on ESICUP achieved an individual linear extent of 75.07 under adaptive rotation (vs. 75.75 orthogonal), this was an isolated single-seed anomaly. Orthogonal rotation won in 4 of the 5 seeds, yielding a superior 5-seed mean.
 - **Retraction of Generalized Irregular-Part Claims:** Removed generalized assertions that adaptive rotation improves irregular-part packing, explicitly stating that without a separate reproducible multi-seed benchmark on non-orthogonal concave geometries, such claims are unsubstantiated.
 - **Discrete Stock Semantics:** Clarified that in physical manufacturing, sheet stock procurement is strictly in discrete integer units. The average metric of "3.60 sheets" reflects that 3 runs consumed 4 sheets and 2 runs consumed 3 sheets; it is never a fractional physical purchase of 3.60 sheets.
-- **Updated File:** [`STAGE_C_BENCHMARK_RECONCILIATION.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_BENCHMARK_RECONCILIATION.md)
+- **Updated File:** [`STAGE_C_BENCHMARK_RECONCILIATION.md`](./STAGE_C_BENCHMARK_RECONCILIATION.md)
 
 ### 2.2. Geometry Test Discrepancy & Topological Validation
 - **Reconciliation of Boundary Test Discrepancy:**
@@ -44,8 +44,8 @@ Dated backups of the original Stage C reports were created prior to modification
   - *Policy Enforced:* Documented that CAD ingestion must not silently accept repaired geometry if its topology materially changes; CAD loaders must trigger a validation warning or reject the drawing.
 - **Test Suite Status:** Total project tests increased from 50 to **51 tests** (all 51 passing in 2.59s).
 - **Updated Files:**
-  - [`test_geometry_adversarial_stress.py`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/tests/test_geometry_adversarial_stress.py)
-  - [`STAGE_C_GEOMETRY_STRESS_TEST.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_GEOMETRY_STRESS_TEST.md)
+  - [`test_geometry_adversarial_stress.py`](../tests/test_geometry_adversarial_stress.py)
+  - [`STAGE_C_GEOMETRY_STRESS_TEST.md`](./STAGE_C_GEOMETRY_STRESS_TEST.md)
 
 ### 2.3. CAM Terminology Precision
 - **Replacement of Overclaimed Terminology:**
@@ -54,7 +54,7 @@ Dated backups of the original Stage C reports were created prior to modification
 - **Explicit Statement of Non-Testing:**
   - Added explicit declaration: "No manual or automated import into third-party commercial CAM suites (such as Trumpf TruTops, Bystronic BySoft, CypCut, Hypertherm ProNest, or SheetCam) and no physical CNC cutting table machine execution was performed or tested in this audit."
 - **Preservation of Engineering Disclaimers:** Preserved all disclaimers regarding the absence of G-code, lead-in/lead-out vectors, micro-tabs/joints, kerf offsets, and thermal distortion compensation.
-- **Updated File:** [`STAGE_C_CAM_COMPATIBILITY.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_CAM_COMPATIBILITY.md)
+- **Updated File:** [`STAGE_C_CAM_COMPATIBILITY.md`](./STAGE_C_CAM_COMPATIBILITY.md)
 
 ### 2.4. Security Review Precision & Attribution Reconciliation
 - **Replacement of Absolute Claims:** Replaced claims of "zero vulnerabilities" and "zero security risks" with four specifically scoped categories: static AST rule evaluation, cryptographic SHA256 hash checks, pinned dependency inventory, and execution boundary analysis.
@@ -63,11 +63,11 @@ Dated backups of the original Stage C reports were created prior to modification
   - Corrected an attribution error in the initial draft where the Fowler (`refactoring`) and Ousterhout (`a-philosophy-of-software-design`) skills were mistakenly attributed to `antigravity-awesome-skills`.
   - Reconciled with Stage A records: Fowler and Ousterhout skills were adapted from **`ciembor/agent-rules-books`** (commit `893a88a6`).
   - Clarified that **`antigravity-awesome-skills`** was an external repository candidate evaluated during Stage A and **REJECTED / NOT INSTALLED**.
-- **Updated File:** [`STAGE_C_SECURITY_REVIEW.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_SECURITY_REVIEW.md)
+- **Updated File:** [`STAGE_C_SECURITY_REVIEW.md`](./STAGE_C_SECURITY_REVIEW.md)
 
 ### 2.5. Release Readiness Master Synthesis
 - **Synthesis Update:** Updated the master report to reflect all C.1 evidence corrections, the 51-test suite, the discrete sheet semantics, the CAM boundaries, the CAD topology caveats, and the reconciled repository origins.
-- **Updated File:** [`STAGE_C_RELEASE_READINESS.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_RELEASE_READINESS.md)
+- **Updated File:** [`STAGE_C_RELEASE_READINESS.md`](./STAGE_C_RELEASE_READINESS.md)
 
 ---
 

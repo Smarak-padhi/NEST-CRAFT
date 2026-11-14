@@ -85,6 +85,10 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
                             "Under fail-closed policy, repaired collections with non-polygonal components are rejected."
                         )
                     return float('inf')
+                if not g.is_valid:
+                    if fail_closed:
+                        raise GeometryComparisonError("Repaired GeometryCollection contains invalid polygonal component")
+                    return float('inf')
 
             polys = list(poly_repaired.geoms)
             if not polys:
@@ -95,8 +99,17 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
             flat_polys = []
             for p in polys:
                 if isinstance(p, MultiPolygon):
-                    flat_polys.extend(list(p.geoms))
+                    for sub in p.geoms:
+                        if sub.is_empty or not sub.is_valid:
+                            if fail_closed:
+                                raise GeometryComparisonError("Repaired GeometryCollection contains empty or invalid polygon component")
+                            return float('inf')
+                        flat_polys.append(sub)
                 else:
+                    if p.is_empty or not p.is_valid:
+                        if fail_closed:
+                            raise GeometryComparisonError("Repaired GeometryCollection contains empty or invalid polygon component")
+                        return float('inf')
                     flat_polys.append(p)
 
             if not flat_polys:
@@ -104,7 +117,38 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
                     raise GeometryComparisonError("Repaired GeometryCollection contains no 2D polygonal components")
                 return float('inf')
 
-            rep_b = MultiPolygon(flat_polys).boundary if len(flat_polys) > 1 else flat_polys[0].boundary
+            if len(flat_polys) == 1:
+                rep_geom = flat_polys[0]
+            else:
+                # Check pairwise duplicate, overlapping, or nested polygons before forming MultiPolygon
+                for i in range(len(flat_polys)):
+                    for j in range(i + 1, len(flat_polys)):
+                        p_a = flat_polys[i]
+                        p_b = flat_polys[j]
+                        if p_a.equals(p_b):
+                            if fail_closed:
+                                raise GeometryComparisonError("Repaired GeometryCollection contains duplicate polygon components")
+                            return float('inf')
+                        # Check area overlap or containment
+                        inter = p_a.intersection(p_b)
+                        if not inter.is_empty and inter.area > 1e-4:
+                            if fail_closed:
+                                raise GeometryComparisonError("Repaired GeometryCollection contains overlapping or nested polygon components")
+                            return float('inf')
+
+                try:
+                    rep_geom = MultiPolygon(flat_polys)
+                except Exception as e:
+                    if fail_closed:
+                        raise GeometryComparisonError(f"Failed to construct valid MultiPolygon from GeometryCollection: {str(e)}") from e
+                    return float('inf')
+
+                if not rep_geom.is_valid:
+                    if fail_closed:
+                        raise GeometryComparisonError("Repaired polygonal GeometryCollection produces invalid MultiPolygon topology")
+                    return float('inf')
+
+            rep_b = rep_geom.boundary
         else:
             rep_b = poly_repaired.boundary
 
@@ -271,7 +315,13 @@ class Part:
                 if len(flat_polys) == 1:
                     polygon = flat_polys[0]
                 elif len(flat_polys) > 1:
-                    polygon = MultiPolygon(flat_polys)
+                    try:
+                        mp_cand = MultiPolygon(flat_polys)
+                    except Exception as e:
+                        raise CADTopologyError(f"Repaired geometry for part '{part_id}' cannot form valid MultiPolygon: {str(e)}") from e
+                    if not mp_cand.is_valid:
+                        raise CADTopologyError(f"Repaired geometry for part '{part_id}' produces invalid MultiPolygon topology (components may overlap, be nested, or be duplicate).")
+                    polygon = mp_cand
                 else:
                     raise CADTopologyError(f"Repaired geometry for part '{part_id}' contains no 2D polygonal area.")
             elif isinstance(repaired, MultiPolygon):
@@ -284,7 +334,13 @@ class Part:
                 if len(polys) == 1:
                     polygon = polys[0]
                 elif len(polys) > 1:
-                    polygon = MultiPolygon(polys)
+                    try:
+                        mp_cand = MultiPolygon(polys)
+                    except Exception as e:
+                        raise CADTopologyError(f"Repaired geometry for part '{part_id}' cannot form valid MultiPolygon: {str(e)}") from e
+                    if not mp_cand.is_valid:
+                        raise CADTopologyError(f"Repaired geometry for part '{part_id}' produces invalid MultiPolygon topology (components may overlap, be nested, or be duplicate).")
+                    polygon = mp_cand
                 else:
                     raise CADTopologyError(f"Repaired geometry for part '{part_id}' contains no 2D polygonal area.")
             else:

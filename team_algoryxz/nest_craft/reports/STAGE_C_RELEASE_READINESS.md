@@ -41,26 +41,26 @@ In accordance with release engineering standards, all findings identified during
 - **Reconciliation Resolution:** The historical 1,946.00 mm vs. 1,939.33 mm linear extent metric is mathematically reconciled as a 5-seed vs. 3-seed arithmetic mean. Per-seed outputs are 100% bitwise identical across all runs.
 - **Stock Procurement Semantics:** Sheet stock is purchased strictly in discrete integer units. Fractional averages (e.g., 3.60 sheets) are statistical artifacts across runs; an industrial shop faces a 4-sheet purchase penalty whenever a run exceeds 3 sheets.
 - **Performance Summary:** Mode A (Orthogonal) outperformed Mode B (Adaptive) on average in both datasets. Seed 42 on ESICUP achieved a slight single-seed gain under adaptive mode (75.07 vs. 75.75), but across all 5 seeds orthogonal rotation achieved a superior mean (75.15 vs. 76.13). Generalized claims of adaptive rotation superiority on irregular parts are retracted until substantiated by separate multi-seed benchmarks.
-- **Reference:** [`STAGE_C_BENCHMARK_RECONCILIATION.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_BENCHMARK_RECONCILIATION.md)
+- **Reference:** [`STAGE_C_BENCHMARK_RECONCILIATION.md`](./STAGE_C_BENCHMARK_RECONCILIATION.md)
 
 ### 3.2. Geometry Adversarial Robustness
 - **Stress Testing:** 10 adversarial edge-case suites executed in `test_geometry_adversarial_stress.py`.
 - **Boundary Discrepancy Reconciled:** Dual boundary checks explicitly verified both $3.990\text{ mm}$ ($10\text{ \mu m}$ invasion) and $3.999\text{ mm}$ ($1\text{ \mu m}$ invasion) trigger collision against a $4.000\text{ mm}$ threshold, while exact $4.000\text{ mm}$ separation passes cleanly.
 - **Topological Invariants:** Inward buffer pinch-offs, cross-shaped concave cutouts, acute $30^\circ$ circular vertices, rolling grain constraints, self-intersecting repairs, and material loss quantification on `make_valid` multi-component decomposition were all verified.
 - **Test Suite Status:** 51 of 51 tests passing in 2.59 seconds.
-- **Reference:** [`STAGE_C_GEOMETRY_STRESS_TEST.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_GEOMETRY_STRESS_TEST.md)
+- **Reference:** [`STAGE_C_GEOMETRY_STRESS_TEST.md`](./STAGE_C_GEOMETRY_STRESS_TEST.md)
 
 ### 3.3. Structural DXF Validation
 - **Vector Integrity:** `ezdxf.audit()` confirmed 0 errors, 0 fixes, and 0 unclosed polylines across all exported DXFs.
 - **Layer Separation:** Explicit segregation into `SHEET_BOUNDARY`, `CUT_CONTOUR`, `HOLE_CONTOUR`, `PART_IN_PART_CHILD`, and Layer `0` (Disclaimer).
 - **Scope Limitation:** Validation is strictly limited to programmatic DXF R2010 file structure. No commercial CAM software import and no CNC table machine execution was performed.
-- **Reference:** [`STAGE_C_CAM_COMPATIBILITY.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_CAM_COMPATIBILITY.md)
+- **Reference:** [`STAGE_C_CAM_COMPATIBILITY.md`](./STAGE_C_CAM_COMPATIBILITY.md)
 
 ### 3.4. Scoped Security Review & Repository Reconciliation
 - **Skill Integrity:** All 6 active global and project skills verified against cryptographic SHA256 hashes.
 - **Repository Attribution Reconciled:** Fowler (`refactoring`) and Ousterhout (`a-philosophy-of-software-design`) skills were adapted from **`ciembor/agent-rules-books`** (commit `893a88a6`). `antigravity-awesome-skills` was an external candidate that was rejected and not installed.
 - **Environment Isolation:** NVIDIA SkillSpector operates inside an isolated virtual environment (`~/.gemini/tooling/skillspector_env`), ensuring zero modification to the host Python environment.
-- **Reference:** [`STAGE_C_SECURITY_REVIEW.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/STAGE_C_SECURITY_REVIEW.md)
+- **Reference:** [`STAGE_C_SECURITY_REVIEW.md`](./STAGE_C_SECURITY_REVIEW.md)
 
 ---
 
