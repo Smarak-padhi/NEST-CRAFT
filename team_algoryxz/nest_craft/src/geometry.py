@@ -16,6 +16,10 @@ class CADTopologyError(ValueError):
     """Raised when CAD geometry has invalid self-intersections or undergoes unauthorized topology changes."""
     pass
 
+class GeometryComparisonError(CADTopologyError):
+    """Raised when geometric boundary deviation or topology comparison cannot be evaluated reliably."""
+    pass
+
 def count_geometry_holes(geom: Union[Polygon, MultiPolygon, GeometryCollection]) -> int:
     """Counts total interior holes across a Polygon, MultiPolygon, or GeometryCollection."""
     if hasattr(geom, 'geoms'):
@@ -25,24 +29,53 @@ def count_geometry_holes(geom: Union[Polygon, MultiPolygon, GeometryCollection])
     return 0
 
 def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon], 
-                               poly_repaired: Union[Polygon, MultiPolygon, GeometryCollection]) -> float:
+                               poly_repaired: Union[Polygon, MultiPolygon, GeometryCollection],
+                               fail_closed: bool = True) -> float:
     """
     Computes maximum boundary displacement (Hausdorff distance) between 
     the original input boundary and the repaired 2D boundary.
+    Fails closed: If comparison fails, raises GeometryComparisonError (or returns float('inf')
+    if fail_closed=False). Never returns 0.0 on comparison error.
     """
+    if poly_orig is None or poly_repaired is None:
+        if fail_closed:
+            raise GeometryComparisonError("Cannot compute boundary deviation: input geometry is None")
+        return float('inf')
+
     try:
+        if poly_orig.is_empty or poly_repaired.is_empty:
+            if fail_closed:
+                raise GeometryComparisonError("Cannot compute boundary deviation: input or repaired geometry is empty")
+            return float('inf')
+
         orig_b = poly_orig.boundary
         if isinstance(poly_repaired, GeometryCollection):
-            polys = [g for g in poly_repaired.geoms if isinstance(g, (Polygon, MultiPolygon))]
+            polys = [g for g in poly_repaired.geoms if isinstance(g, (Polygon, MultiPolygon)) and not g.is_empty]
             if not polys:
+                if fail_closed:
+                    raise GeometryComparisonError("Repaired geometry contains no 2D polygonal components")
                 return float('inf')
             rep_b = MultiPolygon(polys).boundary if len(polys) > 1 else polys[0].boundary
         else:
             rep_b = poly_repaired.boundary
+
+        if orig_b is None or rep_b is None or orig_b.is_empty or rep_b.is_empty:
+            if fail_closed:
+                raise GeometryComparisonError("Boundary geometry is missing or empty")
+            return float('inf')
+
         dist = float(orig_b.hausdorff_distance(rep_b))
-        return dist if not math.isnan(dist) else 0.0
-    except Exception:
-        return 0.0
+        if math.isnan(dist) or math.isinf(dist):
+            if fail_closed:
+                raise GeometryComparisonError(f"Hausdorff distance calculation produced non-finite value: {dist}")
+            return float('inf')
+        return dist
+    except GeometryComparisonError:
+        raise
+    except Exception as e:
+        if fail_closed:
+            raise GeometryComparisonError(f"Boundary deviation comparison failed: {str(e)}") from e
+        return float('inf')
 
 class Part:
     """Represents a component/part to be nested. Supports both Polygon and MultiPolygon."""
@@ -62,11 +95,18 @@ class Part:
             
             area_delta = abs(repaired_area - input_area)
             area_delta_pct = (area_delta / input_area) if input_area > 1e-6 else 0.0
-            hausdorff_dist = compute_boundary_deviation(polygon, repaired)
             
-            topology_altered = False
-            feature_loss_detected = False
+            comparison_failed = False
             notes = []
+            try:
+                hausdorff_dist = compute_boundary_deviation(polygon, repaired, fail_closed=True)
+            except GeometryComparisonError as e:
+                hausdorff_dist = float('inf')
+                comparison_failed = True
+                notes.append(f"boundary deviation comparison error: {str(e)}")
+            
+            topology_altered = comparison_failed
+            feature_loss_detected = comparison_failed
             
             if num_repaired_components != num_input_components:
                 topology_altered = True
@@ -88,7 +128,8 @@ class Part:
             max_dev_threshold = float(self.metadata.get("max_boundary_deviation", 0.5))
             if hausdorff_dist > max_dev_threshold:
                 feature_loss_detected = True
-                notes.append(f"boundary deviation {hausdorff_dist:.3f}mm exceeds tolerance {max_dev_threshold:.3f}mm")
+                if not comparison_failed:
+                    notes.append(f"boundary deviation {hausdorff_dist:.3f}mm exceeds tolerance {max_dev_threshold:.3f}mm")
                 
             repair_authorized = bool(self.metadata.get("allow_repaired_topology", False))
             
@@ -103,12 +144,22 @@ class Part:
                 "repaired_area": round(repaired_area, 4),
                 "area_delta": round(area_delta, 4),
                 "area_delta_pct": round(area_delta_pct * 100.0, 3),
-                "hausdorff_distance": round(hausdorff_dist, 4),
+                "hausdorff_distance": round(hausdorff_dist, 4) if not math.isinf(hausdorff_dist) else float('inf'),
                 "feature_loss_detected": feature_loss_detected,
                 "topology_altered": topology_altered,
                 "repair_authorized": repair_authorized,
                 "notes": notes
             }
+            
+            if comparison_failed:
+                # Fails closed on comparison failure: cannot verify feature preservation
+                allow_unverifiable = bool(self.metadata.get("allow_unverifiable_geometry", False))
+                if not allow_unverifiable:
+                    diag = "; ".join(notes) if notes else "boundary comparison failed"
+                    raise GeometryComparisonError(
+                        f"Geometry validation failed for part '{part_id}': Boundary deviation comparison failed ({diag}). "
+                        f"Cannot verify feature preservation; failing closed to prevent authorizing damaged geometry."
+                    )
             
             if (topology_altered or not is_valid_orig) and not repair_authorized:
                 diag = "; ".join(notes) if notes else "Input contour is self-intersecting"
@@ -120,9 +171,10 @@ class Part:
                 
             allow_feature_loss = bool(self.metadata.get("allow_feature_loss", False))
             if feature_loss_detected and not allow_feature_loss:
+                dev_str = f"{hausdorff_dist:.3f} mm" if not math.isinf(hausdorff_dist) else "infinite/uncomputed"
                 raise CADTopologyError(
                     f"Geometry validation failed for part '{part_id}': Critical feature loss or boundary deviation detected "
-                    f"(Hausdorff distance {hausdorff_dist:.3f} mm exceeds tolerance {max_dev_threshold:.3f} mm). "
+                    f"(Hausdorff distance {dev_str} exceeds tolerance {max_dev_threshold:.3f} mm). "
                     f"Automated repair collapsed physical features. Requires explicit metadata['allow_feature_loss']=True."
                 )
                 
