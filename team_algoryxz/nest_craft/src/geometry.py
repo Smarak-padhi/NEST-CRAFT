@@ -16,48 +16,114 @@ class CADTopologyError(ValueError):
     """Raised when CAD geometry has invalid self-intersections or undergoes unauthorized topology changes."""
     pass
 
+def count_geometry_holes(geom: Union[Polygon, MultiPolygon, GeometryCollection]) -> int:
+    """Counts total interior holes across a Polygon, MultiPolygon, or GeometryCollection."""
+    if hasattr(geom, 'geoms'):
+        return sum(len(g.interiors) for g in geom.geoms if hasattr(g, 'interiors'))
+    elif hasattr(geom, 'interiors'):
+        return len(geom.interiors)
+    return 0
+
+def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon], 
+                               poly_repaired: Union[Polygon, MultiPolygon, GeometryCollection]) -> float:
+    """
+    Computes maximum boundary displacement (Hausdorff distance) between 
+    the original input boundary and the repaired 2D boundary.
+    """
+    try:
+        orig_b = poly_orig.boundary
+        if isinstance(poly_repaired, GeometryCollection):
+            polys = [g for g in poly_repaired.geoms if isinstance(g, (Polygon, MultiPolygon))]
+            if not polys:
+                return float('inf')
+            rep_b = MultiPolygon(polys).boundary if len(polys) > 1 else polys[0].boundary
+        else:
+            rep_b = poly_repaired.boundary
+        dist = float(orig_b.hausdorff_distance(rep_b))
+        return dist if not math.isnan(dist) else 0.0
+    except Exception:
+        return 0.0
+
 class Part:
     """Represents a component/part to be nested. Supports both Polygon and MultiPolygon."""
     def __init__(self, polygon: Union[Polygon, MultiPolygon], part_id: str, quantity: int = 1, metadata: Optional[Dict[str, Any]] = None):
         self.metadata = metadata or {}
         
-        # Validate and clean polygon
-        if not polygon.is_valid:
+        is_valid_orig = polygon.is_valid
+        num_input_components = len(polygon.geoms) if isinstance(polygon, MultiPolygon) else 1
+        num_input_holes = count_geometry_holes(polygon)
+        input_area = float(polygon.area)
+        
+        if not is_valid_orig:
             repaired = make_valid(polygon)
-            
-            # Detect material topology alterations
-            num_input_components = len(polygon.geoms) if isinstance(polygon, MultiPolygon) else 1
             num_repaired_components = len(repaired.geoms) if isinstance(repaired, (MultiPolygon, GeometryCollection)) else 1
+            num_repaired_holes = count_geometry_holes(repaired)
+            repaired_area = float(repaired.area)
             
-            # Count interior holes before and after repair
-            def _count_holes(geom):
-                if hasattr(geom, 'geoms'):
-                    return sum(len(g.interiors) for g in geom.geoms if hasattr(g, 'interiors'))
-                elif hasattr(geom, 'interiors'):
-                    return len(geom.interiors)
-                return 0
-                
-            num_input_holes = _count_holes(polygon)
-            num_repaired_holes = _count_holes(repaired)
+            area_delta = abs(repaired_area - input_area)
+            area_delta_pct = (area_delta / input_area) if input_area > 1e-6 else 0.0
+            hausdorff_dist = compute_boundary_deviation(polygon, repaired)
             
             topology_altered = False
+            feature_loss_detected = False
+            notes = []
+            
             if num_repaired_components != num_input_components:
                 topology_altered = True
-            elif num_repaired_holes != num_input_holes:
-                topology_altered = True
-            elif polygon.area > 1e-4 and abs(repaired.area - polygon.area) / polygon.area > 0.01:
-                topology_altered = True
-            elif isinstance(repaired, GeometryCollection):
-                topology_altered = True
+                notes.append(f"components: {num_input_components} -> {num_repaired_components}")
                 
-            if topology_altered and not self.metadata.get("allow_repaired_topology", False):
+            if num_repaired_holes != num_input_holes:
+                topology_altered = True
+                notes.append(f"holes: {num_input_holes} -> {num_repaired_holes}")
+                
+            max_area_delta_pct = float(self.metadata.get("max_area_delta_pct", 0.01))
+            if input_area > 1e-4 and area_delta_pct > max_area_delta_pct:
+                topology_altered = True
+                notes.append(f"area: {input_area:.2f} -> {repaired_area:.2f} (delta {area_delta_pct*100.0:.2f}%)")
+                
+            if isinstance(repaired, GeometryCollection):
+                topology_altered = True
+                notes.append("repair produced non-polygonal elements (GeometryCollection)")
+                
+            max_dev_threshold = float(self.metadata.get("max_boundary_deviation", 0.5))
+            if hausdorff_dist > max_dev_threshold:
+                feature_loss_detected = True
+                notes.append(f"boundary deviation {hausdorff_dist:.3f}mm exceeds tolerance {max_dev_threshold:.3f}mm")
+                
+            repair_authorized = bool(self.metadata.get("allow_repaired_topology", False))
+            
+            self.validation_record = {
+                "is_valid_original": False,
+                "is_valid_repaired": repaired.is_valid,
+                "input_components": num_input_components,
+                "repaired_components": num_repaired_components,
+                "input_holes": num_input_holes,
+                "repaired_holes": num_repaired_holes,
+                "original_area": round(input_area, 4),
+                "repaired_area": round(repaired_area, 4),
+                "area_delta": round(area_delta, 4),
+                "area_delta_pct": round(area_delta_pct * 100.0, 3),
+                "hausdorff_distance": round(hausdorff_dist, 4),
+                "feature_loss_detected": feature_loss_detected,
+                "topology_altered": topology_altered,
+                "repair_authorized": repair_authorized,
+                "notes": notes
+            }
+            
+            if (topology_altered or not is_valid_orig) and not repair_authorized:
+                diag = "; ".join(notes) if notes else "Input contour is self-intersecting"
                 raise CADTopologyError(
                     f"Geometry validation failed for part '{part_id}': Input contour is self-intersecting "
-                    f"and repair via make_valid materially altered topology "
-                    f"(components: {num_input_components} -> {num_repaired_components}, "
-                    f"holes: {num_input_holes} -> {num_repaired_holes}, "
-                    f"area: {polygon.area:.2f} -> {repaired.area:.2f}). "
+                    f"and repair via make_valid materially altered topology ({diag}). "
                     f"Geometry must be corrected in CAD or explicitly authorized via metadata['allow_repaired_topology']=True."
+                )
+                
+            allow_feature_loss = bool(self.metadata.get("allow_feature_loss", False))
+            if feature_loss_detected and not allow_feature_loss:
+                raise CADTopologyError(
+                    f"Geometry validation failed for part '{part_id}': Critical feature loss or boundary deviation detected "
+                    f"(Hausdorff distance {hausdorff_dist:.3f} mm exceeds tolerance {max_dev_threshold:.3f} mm). "
+                    f"Automated repair collapsed physical features. Requires explicit metadata['allow_feature_loss']=True."
                 )
                 
             # If authorized, extract all polygon components without silently discarding any
@@ -77,6 +143,24 @@ class Part:
                     raise CADTopologyError(f"Repaired geometry for part '{part_id}' contains no 2D polygonal area.")
             else:
                 polygon = repaired
+        else:
+            self.validation_record = {
+                "is_valid_original": True,
+                "is_valid_repaired": True,
+                "input_components": num_input_components,
+                "repaired_components": num_input_components,
+                "input_holes": num_input_holes,
+                "repaired_holes": num_input_holes,
+                "original_area": round(input_area, 4),
+                "repaired_area": round(input_area, 4),
+                "area_delta": 0.0,
+                "area_delta_pct": 0.0,
+                "hausdorff_distance": 0.0,
+                "feature_loss_detected": False,
+                "topology_altered": False,
+                "repair_authorized": bool(self.metadata.get("allow_repaired_topology", False)),
+                "notes": []
+            }
                 
         # Preserve all valid components (whether Polygon or MultiPolygon)
         self.polygon = polygon

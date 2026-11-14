@@ -19,10 +19,14 @@ from shapely.validation import make_valid
 import ezdxf
 from ezdxf import path
 
-from .geometry import Part
+from .geometry import Part, CADTopologyError
 
 class DXFValidationError(ValueError):
     """Raised when a DXF file cannot be validated or has fatal geometry errors."""
+    pass
+
+class DXFExportValidationError(ValueError):
+    """Raised when an exported DXF fails structural audit or geometry conservation checks."""
     pass
 
 SUPPORTED_2D_CONTOUR_TYPES = {
@@ -43,7 +47,7 @@ IGNORE_LAYERS = {
     'SHEET_BOUNDARY', 'BORDER', 'MARGIN', 'TITLE_BLOCK', 'FRAME', 'DEFPOINTS'
 }
 
-def parse_esicup_txt(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
+def parse_esicup_txt(file_path: str, allow_repaired_topology: bool = False) -> Tuple[List[Part], Dict[str, Any]]:
     """
     Parses classic ESICUP format (e.g. shapes.txt, swim.txt).
     Format:
@@ -57,7 +61,13 @@ def parse_esicup_txt(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
     ...
     """
     parts = []
-    metadata = {"source": file_path, "filename": os.path.basename(file_path)}
+    metadata = {
+        "source": file_path, 
+        "filename": os.path.basename(file_path),
+        "is_valid": True,
+        "errors": [],
+        "warnings": []
+    }
     
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read().strip()
@@ -101,18 +111,25 @@ def parse_esicup_txt(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
             
         if len(coords) >= 3:
             poly = Polygon(coords)
-            if not poly.is_valid:
-                poly = make_valid(poly)
-            if isinstance(poly, MultiPolygon):
-                poly = max(poly.geoms, key=lambda g: g.area)
-            parts.append(Part(poly, part_id=f"piece_{idx+1}", quantity=qty))
+            meta = {
+                "source_file": os.path.basename(file_path),
+                "piece_index": idx + 1,
+                "allow_repaired_topology": allow_repaired_topology
+            }
+            parts.append(Part(poly, part_id=f"piece_{idx+1}", quantity=qty, metadata=meta))
             
+    metadata["total_pieces_extracted"] = len(parts)
+    metadata["total_quantity"] = sum(p.quantity for p in parts)
     return parts, metadata
 
-def parse_esicup_xml(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
+def parse_esicup_xml(file_path: str, allow_repaired_topology: bool = False) -> Tuple[List[Part], Dict[str, Any]]:
     """Parses ESICUP XML format (e.g. shapes0.xml)."""
     parts = []
-    metadata = {}
+    metadata = {
+        "is_valid": True,
+        "errors": [],
+        "warnings": []
+    }
     
     tree = ET.parse(file_path)
     root = tree.getroot()
@@ -140,10 +157,6 @@ def parse_esicup_xml(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
                     coords.append((x0, y0))
             if len(coords) >= 3:
                 poly = Polygon(coords)
-                if not poly.is_valid:
-                    poly = make_valid(poly)
-                if isinstance(poly, MultiPolygon):
-                    poly = max(poly.geoms, key=lambda g: g.area)
                 polygons_dict[poly_id] = poly
                 
     # Parse problem lot
@@ -156,8 +169,16 @@ def parse_esicup_xml(file_path: str) -> Tuple[List[Part], Dict[str, Any]]:
             if comp is not None:
                 id_poly = comp.attrib.get("idPolygon")
                 if id_poly in polygons_dict:
-                    parts.append(Part(polygons_dict[id_poly], part_id=piece_id, quantity=qty))
+                    raw_poly = polygons_dict[id_poly]
+                    meta = {
+                        "source_file": os.path.basename(file_path),
+                        "piece_id": piece_id,
+                        "allow_repaired_topology": allow_repaired_topology
+                    }
+                    parts.append(Part(raw_poly, part_id=piece_id, quantity=qty, metadata=meta))
                     
+    metadata["total_pieces_extracted"] = len(parts)
+    metadata["total_quantity"] = sum(p.quantity for p in parts)
     return parts, metadata
 
 def validate_and_parse_dxf(file_path: str, allow_repaired_topology: bool = False) -> Tuple[List[Part], Dict[str, Any]]:
@@ -495,12 +516,108 @@ def create_sample_industrial_dxfs(output_dir: str) -> List[str]:
     
     return created_paths
 
-def export_nesting_to_dxf(sheets: List[Any], output_file: str) -> str:
+def validate_exported_dxf(output_file: str, sheets: List[Any], area_tolerance: float = 0.05) -> Dict[str, Any]:
+    """
+    Validates an exported nesting DXF file for CNC cutting trustworthiness.
+    Verifies:
+      1. Reopenability via ezdxf.readfile without parsing errors.
+      2. Document structural integrity via ezdxf audit (zero audit errors).
+      3. Required layer presence (SHEET_BOUNDARY, CUT_CONTOUR if parts exist).
+      4. Closure of all cutting, hole, and boundary polyline contours.
+      5. Net part area conservation between in-memory placed parts and DXF exported geometry
+         within area_tolerance (default 0.05 mm^2).
+    Raises DXFExportValidationError if any check fails.
+    """
+    if not os.path.exists(output_file):
+        raise DXFExportValidationError(f"Exported DXF file does not exist: {output_file}")
+    
+    try:
+        doc = ezdxf.readfile(output_file)
+    except Exception as e:
+        raise DXFExportValidationError(f"Exported DXF failed reopenability check: {str(e)}")
+        
+    auditor = doc.audit()
+    if auditor.has_errors:
+        err_msgs = [getattr(err, 'message', str(err)) for err in auditor.errors]
+        raise DXFExportValidationError(f"Exported DXF failed structural audit with {len(auditor.errors)} error(s): {'; '.join(err_msgs)}")
+        
+    msp = doc.modelspace()
+    entities = list(msp)
+    
+    sheet_boundaries = []
+    cut_contours = []
+    hole_contours = []
+    
+    for ent in entities:
+        dxftype = ent.dxftype()
+        layer = ent.dxf.layer if hasattr(ent.dxf, 'layer') else '0'
+        
+        if dxftype in ('LWPOLYLINE', 'POLYLINE'):
+            if not ent.is_closed:
+                raise DXFExportValidationError(f"Polyline entity {getattr(ent.dxf, 'handle', 'UNKNOWN')} on layer '{layer}' is not closed.")
+            
+            pts = [(p[0], p[1]) for p in ent.get_points()]
+            if len(pts) < 3:
+                raise DXFExportValidationError(f"Polyline entity {getattr(ent.dxf, 'handle', 'UNKNOWN')} on layer '{layer}' has fewer than 3 vertices.")
+                
+            poly = Polygon(pts)
+            if not poly.is_valid:
+                poly = make_valid(poly)
+                
+            if layer == 'SHEET_BOUNDARY':
+                sheet_boundaries.append(poly)
+            elif layer in ('CUT_CONTOUR', 'PART_IN_PART_CHILD'):
+                cut_contours.append(poly)
+            elif layer == 'HOLE_CONTOUR':
+                hole_contours.append(poly)
+
+    # Layer presence checks
+    if sheets and not sheet_boundaries:
+        raise DXFExportValidationError("Exported DXF is missing expected SHEET_BOUNDARY layer polylines.")
+        
+    expected_net_area = 0.0
+    expected_placed_count = 0
+    for s in sheets:
+        for p_id, p_poly, p_rot in s.placed_parts:
+            expected_net_area += p_poly.area
+            expected_placed_count += 1
+            
+    if expected_placed_count > 0 and not cut_contours:
+        raise DXFExportValidationError("Exported DXF has placed parts but missing CUT_CONTOUR layer polylines.")
+        
+    # Net area conservation check
+    gross_cut_area = sum(p.area for p in cut_contours)
+    hole_area = sum(p.area for p in hole_contours)
+    reconstructed_net_area = gross_cut_area - hole_area
+    area_delta = abs(reconstructed_net_area - expected_net_area)
+    
+    if area_delta > area_tolerance:
+        raise DXFExportValidationError(
+            f"Net area conservation mismatch: expected {expected_net_area:.4f} mm², "
+            f"reconstructed from DXF is {reconstructed_net_area:.4f} mm² "
+            f"(delta: {area_delta:.4f} mm² exceeds tolerance {area_tolerance} mm²)."
+        )
+        
+    return {
+        "valid": True,
+        "entity_count": len(entities),
+        "sheet_boundary_count": len(sheet_boundaries),
+        "cut_contour_count": len(cut_contours),
+        "hole_contour_count": len(hole_contours),
+        "expected_net_area": expected_net_area,
+        "exported_net_area": reconstructed_net_area,
+        "area_delta": area_delta,
+        "audit_errors": len(auditor.errors),
+        "audit_fixes": len(auditor.fixes)
+    }
+
+def export_nesting_to_dxf(sheets: List[Any], output_file: str, validate: bool = True) -> str:
     """
     Exports nested sheet layout to DXF format for CNC cutting machines.
     Writes exterior cutting contours to layer 'CUT_CONTOUR' (color 2: yellow/cyan)
     and interior hole contours to layer 'HOLE_CONTOUR' (color 4: cyan/magenta).
     Adds safety notice layer for CAM verification.
+    If validate is True, validates the output with validate_exported_dxf.
     """
     doc = ezdxf.new('R2010')
     msp = doc.modelspace()
@@ -541,4 +658,6 @@ def export_nesting_to_dxf(sheets: List[Any], output_file: str) -> str:
         x_sheet_offset += sheet.width + 100.0 # 100mm gap between sheets in CAD view
         
     doc.saveas(output_file)
+    if validate:
+        validate_exported_dxf(output_file, sheets)
     return output_file

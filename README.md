@@ -3,7 +3,7 @@
 **Team Algoryxz · Odisha AI Hackathon 2026**
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-66%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
+[![Tests Passing](https://img.shields.io/badge/tests-77%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
 [![Prototype Status](https://img.shields.io/badge/status-Hackathon%20Demo%20Ready-orange.svg)](docs/PROJECT_STATUS.md)
 
 NEST-CRAFT is a Python and Streamlit engineering prototype designed to optimize 2D irregular sheet-metal nesting for manufacturing fabrication. It ingests CAD/DXF profiles, models complex polygonal parts and interior apertures using Shapely, executes heuristic Bottom-Left-Fill (BLF) and Simulated Annealing (SA) optimization, enables Part-in-Part cavity nesting, and exports multi-layer AutoCAD R2010 DXF files for downstream CAM toolpath generation.
@@ -109,12 +109,12 @@ Open `http://localhost:8501` in your browser.
 
 ## 6. Running Tests & Reproducing Benchmarks
 
-### Execute the 66-Test Automated Suite:
+### Execute the 77-Test Automated Suite:
 ```bash
 # Run pytest directly from repository root (configured via pytest.ini)
 pytest team_algoryxz/nest_craft/tests
 ```
-*Expected Result:* **66 passed in ~4 seconds** across 7 test modules (0 failures, 0 errors).
+*Expected Result:* **77 passed in ~5 seconds** across 8 test suites (0 failures, 0 errors).
 
 ### Reproduce the Multi-Seed Optimization Benchmarks:
 ```bash
@@ -147,6 +147,7 @@ python team_algoryxz/nest_craft/benchmarks/run_nesting_benchmarks.py
 | **Stage C.2** | Independent Verification Gate | [`STAGE_C2_INDEPENDENT_VERIFICATION.md`](team_algoryxz/nest_craft/reports/STAGE_C2_INDEPENDENT_VERIFICATION.md) |
 | **Stage D** | DEF-01 Geometry Integrity Remediation | [`STAGE_D_DEF01_REMEDIATION.md`](team_algoryxz/nest_craft/reports/STAGE_D_DEF01_REMEDIATION.md), [`test_def01_remediation.py`](team_algoryxz/nest_craft/tests/test_def01_remediation.py) |
 | **Post-Publication** | Benchmark Audit & Guardrail Verification | [`POST_PUBLICATION_AUDIT.md`](team_algoryxz/nest_craft/reports/POST_PUBLICATION_AUDIT.md), [`POST_PUBLICATION_BENCHMARK_AUDIT.md`](team_algoryxz/nest_craft/reports/POST_PUBLICATION_BENCHMARK_AUDIT.md) |
+| **Stage E** | Geometry Integrity, Ingestion Reliability & Demo Excellence | [`STAGE_E_IMPLEMENTATION_REPORT.md`](team_algoryxz/nest_craft/reports/STAGE_E_IMPLEMENTATION_REPORT.md), [`test_stage_e_integrity.py`](team_algoryxz/nest_craft/tests/test_stage_e_integrity.py) |
 
 For complete documentation, refer to:
 - [Developer Onboarding Guide](docs/DEVELOPER_ONBOARDING.md)
