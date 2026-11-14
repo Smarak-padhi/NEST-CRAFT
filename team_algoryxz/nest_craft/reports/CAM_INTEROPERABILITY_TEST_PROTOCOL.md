@@ -82,4 +82,6 @@ Measure critical dimensions of imported parts using the CAM software's measureme
 * **ezdxf Document Audit:** $100\%$ PASS ($0\text{ errors}$, $0\text{ warnings}$ on all 6 exports).
 * **Polyline Closure Audit:** $100\%$ PASS (all polylines closed with $\ge 3$ vertices).
 * **Net Area Conservation:** $100\%$ PASS (reconstructed DXF net area matches in-memory geometry within $\Delta \le 0.05\text{ mm}^2$).
-* **Physical CAM Software Import:** **PENDING EXTERNAL VALIDATION** (Protocol defined above; awaiting fabrication shop trial).
+* **Commercial CAM License Blocker:** Proprietary commercial CAM suites (e.g., Hypertherm ProNest, CypCut, Trumpf TruTops, Bystronic BySoft) require specialized dongles or proprietary enterprise licenses that are not accessible within this local or CI development environment. Direct CAM validation is therefore blocked pending external trial with licensed fabricator partners.
+* **Physical Cutting Blocker:** No physical cutting machine (laser, plasma, waterjet) has been operated. Physical cutting trials are strictly **NOT CONDUCTED** and **PENDING**.
+* **Prototype Status:** **PENDING EXTERNAL VALIDATION** (Export protocol and structural integrity verified; proprietary CAM import pending licensed shop-floor access).

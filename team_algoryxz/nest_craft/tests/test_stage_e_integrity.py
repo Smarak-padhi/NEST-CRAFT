@@ -178,6 +178,8 @@ def test_part_validation_record_schema():
     assert rec["area_delta_pct"] == 0.0
     assert rec["hausdorff_distance"] == 0.0
     assert rec["feature_loss_detected"] is False
+    assert "active_overrides" in rec
+    assert rec["active_overrides"] == []
 
 def test_hausdorff_deviation_detection_on_boundary_alteration():
     """Verify compute_boundary_deviation detects collapsed spikes even with near-zero area loss."""

@@ -97,12 +97,15 @@ def test_corpus_case10_self_intersecting_gate():
     parts_unauth, rep_unauth = validate_and_parse_dxf(p, allow_repaired_topology=False)
     assert rep_unauth["is_valid"] is False
     assert len(parts_unauth) == 0
+    assert rep_unauth["active_overrides"] == []
     assert any("self-intersections" in e for e in rep_unauth["errors"])
 
     # Authorized path: repaired into 2 components
     parts_auth, rep_auth = validate_and_parse_dxf(p, allow_repaired_topology=True)
     assert rep_auth["is_valid"] is True
     assert len(parts_auth) == 2
+    assert "allow_repaired_topology" in rep_auth["active_overrides"]
+    assert any("ACTIVE CAD OVERRIDE" in w for w in rep_auth["warnings"])
     assert pytest.approx(sum(pt.area for pt in parts_auth), abs=1.0) == 5000.0
 
 def test_corpus_case11_unsupported_3d():
@@ -111,6 +114,7 @@ def test_corpus_case11_unsupported_3d():
     assert rep["is_valid"] is True
     assert len(parts) == 1
     assert any("3DFACE" in w for w in rep["warnings"])
+    assert any("MESH" in w for w in rep["warnings"])
 
 def test_corpus_case12_duplicate_contours():
     p = os.path.join(CORPUS_DIR, "case12_duplicate_contours.dxf")

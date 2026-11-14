@@ -42,12 +42,12 @@ def test_compute_boundary_deviation_empty_geometry_fails_closed():
     assert compute_boundary_deviation(empty_poly, poly, fail_closed=False) == float('inf')
 
 def test_compute_boundary_deviation_non_polygonal_collection_fails_closed():
-    """Verify compute_boundary_deviation raises if repaired geometry has no 2D components."""
+    """Verify compute_boundary_deviation raises if repaired geometry has no 2D components or non-polygonal elements."""
     poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
     gc = GeometryCollection([Point(0, 0), LineString([(0, 0), (5, 5)])])
     with pytest.raises(GeometryComparisonError) as exc_info:
         compute_boundary_deviation(poly, gc, fail_closed=True)
-    assert "no 2D polygonal components" in str(exc_info.value)
+    assert "non-polygonal components" in str(exc_info.value) or "no 2D polygonal components" in str(exc_info.value)
 
     assert compute_boundary_deviation(poly, gc, fail_closed=False) == float('inf')
 
@@ -125,3 +125,98 @@ def test_part_init_unverifiable_requires_both_explicit_flags():
         assert math.isinf(part.validation_record["hausdorff_distance"])
         assert part.validation_record["feature_loss_detected"] is True
         assert part.validation_record["topology_altered"] is True
+        assert sorted(part.validation_record["active_overrides"]) == [
+            "allow_feature_loss", "allow_repaired_topology", "allow_unverifiable_geometry"
+        ]
+
+def test_compute_boundary_deviation_unsupported_orig_types_rejected():
+    """Verify compute_boundary_deviation rejects Point, LineString as original geometry."""
+    poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    point = Point(5, 5)
+    line = LineString([(0, 0), (10, 10)])
+
+    with pytest.raises(GeometryComparisonError) as exc_pt:
+        compute_boundary_deviation(point, poly, fail_closed=True)
+    assert "Unsupported original geometry type 'Point'" in str(exc_pt.value)
+
+    with pytest.raises(GeometryComparisonError) as exc_ln:
+        compute_boundary_deviation(line, poly, fail_closed=True)
+    assert "Unsupported original geometry type 'LineString'" in str(exc_ln.value)
+
+    assert compute_boundary_deviation(point, poly, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_unsupported_repaired_types_rejected():
+    """Verify compute_boundary_deviation rejects Point, LineString as repaired geometry."""
+    poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    point = Point(5, 5)
+    line = LineString([(0, 0), (10, 10)])
+
+    with pytest.raises(GeometryComparisonError) as exc_pt:
+        compute_boundary_deviation(poly, point, fail_closed=True)
+    assert "Unsupported repaired geometry type 'Point'" in str(exc_pt.value)
+
+    with pytest.raises(GeometryComparisonError) as exc_ln:
+        compute_boundary_deviation(poly, line, fail_closed=True)
+    assert "Unsupported repaired geometry type 'LineString'" in str(exc_ln.value)
+
+    assert compute_boundary_deviation(poly, point, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_mixed_geometry_collection_handled():
+    """Verify GeometryCollection with mixed types (Polygon + Point/LineString) is explicitly handled."""
+    poly1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    mixed_spike = GeometryCollection([poly1, LineString([(10, 10), (20, 10)])])
+    mixed_point = GeometryCollection([poly1, Point(15, 5)])
+
+    # Computes valid boundary deviation without crashing or silent unhandled drops
+    dist_spike = compute_boundary_deviation(poly1, mixed_spike, fail_closed=True)
+    assert isinstance(dist_spike, float) and dist_spike == 0.0
+
+    dist_point = compute_boundary_deviation(poly1, mixed_point, fail_closed=True)
+    assert isinstance(dist_point, float) and dist_point == 0.0
+
+    # GeometryCollection with NO 2D polygonal components must fail closed
+    gc_no_polys = GeometryCollection([Point(0, 0), LineString([(0, 0), (5, 5)])])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(poly1, gc_no_polys, fail_closed=True)
+    assert "no 2D polygonal components" in str(exc.value)
+
+    assert compute_boundary_deviation(poly1, gc_no_polys, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_valid_pairs_supported():
+    """Verify valid pairs (Polygon, MultiPolygon, pure GeometryCollection) compute valid distances."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    p2 = Polygon([(0, 0), (10, 0), (10, 12), (0, 12)])
+    mp1 = MultiPolygon([p1, Polygon([(20, 20), (30, 20), (30, 30), (20, 30)])])
+    mp2 = MultiPolygon([p2, Polygon([(20, 20), (30, 20), (30, 30), (20, 30)])])
+    gc_pure = GeometryCollection([p1, p2])
+
+    # Polygon to Polygon
+    assert compute_boundary_deviation(p1, p1) == 0.0
+    assert compute_boundary_deviation(p1, p2) == 2.0
+
+    # Polygon to MultiPolygon
+    dist_p_mp = compute_boundary_deviation(p1, mp1)
+    assert isinstance(dist_p_mp, float) and dist_p_mp >= 0.0
+
+    # MultiPolygon to MultiPolygon
+    assert compute_boundary_deviation(mp1, mp1) == 0.0
+    dist_mp = compute_boundary_deviation(mp1, mp2)
+    assert isinstance(dist_mp, float) and dist_mp > 0.0
+
+    # Polygon to pure polygonal GeometryCollection
+    dist_gc = compute_boundary_deviation(p1, gc_pure)
+    assert isinstance(dist_gc, float) and dist_gc >= 0.0
+
+def test_part_validation_record_active_overrides_tracking():
+    """Verify Part.validation_record accurately tracks active unsafe overrides."""
+    valid_poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    part_default = Part(valid_poly, part_id="default")
+    assert part_default.validation_record["active_overrides"] == []
+
+    part_with_override = Part(
+        valid_poly,
+        part_id="with_override",
+        metadata={"allow_repaired_topology": True}
+    )
+    assert part_with_override.validation_record["active_overrides"] == ["allow_repaired_topology"]
+

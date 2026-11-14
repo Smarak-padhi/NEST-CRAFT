@@ -133,7 +133,13 @@ python team_algoryxz/nest_craft/benchmarks/run_nesting_benchmarks.py
 | **Average Prime Remnant Offcut** | 25,000 mm² | **227,000 mm²** | **+808% usable remnant area** |
 | **Average Runtime** | 3.59s | **7.48s** | Fast interactive feedback |
 
-*Metric Truthfulness Disclosure:* Compaction of linear extent along an unfinished final plate does **NOT** equal discrete sheet purchase savings. When 3 discrete plates are consumed, 3 plates remain physically required. Fractional averages across seeds (e.g. 3.60 sheets) are statistical aggregation artifacts, not physical fractional purchases.
+*Metric Truthfulness Disclosure:* The 17.19% reduction in linear cutting extent along the unfinished final plate is a benchmark-specific compaction metric. It does **NOT** constitute evidence of:
+- Fewer purchased sheets (both BLF and SA required exactly 3 plates)
+- Increased overall sheet utilization
+- Material or financial savings
+- Scrap resale value or scrap reduction
+- Production performance across arbitrary real-world parts
+When 3 discrete plates are consumed, 3 plates remain physically required. Fractional averages across seeds (e.g. 3.60 sheets) are statistical aggregation artifacts, not physical fractional purchases.
 
 ---
 
@@ -148,7 +154,7 @@ python team_algoryxz/nest_craft/benchmarks/run_nesting_benchmarks.py
 | **Stage D** | DEF-01 Geometry Integrity Remediation | [`STAGE_D_DEF01_REMEDIATION.md`](team_algoryxz/nest_craft/reports/STAGE_D_DEF01_REMEDIATION.md), [`test_def01_remediation.py`](team_algoryxz/nest_craft/tests/test_def01_remediation.py) |
 | **Post-Publication** | Benchmark Audit & Guardrail Verification | [`POST_PUBLICATION_AUDIT.md`](team_algoryxz/nest_craft/reports/POST_PUBLICATION_AUDIT.md), [`POST_PUBLICATION_BENCHMARK_AUDIT.md`](team_algoryxz/nest_craft/reports/POST_PUBLICATION_BENCHMARK_AUDIT.md) |
 | **Stage E** | Geometry Integrity, Ingestion Reliability & Demo Excellence | [`STAGE_E_IMPLEMENTATION_REPORT.md`](team_algoryxz/nest_craft/reports/STAGE_E_IMPLEMENTATION_REPORT.md), [`test_stage_e_integrity.py`](team_algoryxz/nest_craft/tests/test_stage_e_integrity.py) |
-| **Stage F** | Reliability Hardening & Real-World Validation Preparation | [`STAGE_F_IMPLEMENTATION_REPORT.md`](team_algoryxz/nest_craft/reports/STAGE_F_IMPLEMENTATION_REPORT.md), [`REAL_WORLD_DXF_TEST_MATRIX.md`](team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_TEST_MATRIX.md), [`CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](team_algoryxz/nest_craft/reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md), [`FABRICATOR_FEEDBACK_TEMPLATE.md`](team_algoryxz/nest_craft/reports/FABRICATOR_FEEDBACK_TEMPLATE.md) |
+| **Stage F** | Reliability Hardening & Real-World Validation Preparation | [`STAGE_F_IMPLEMENTATION_REPORT.md`](team_algoryxz/nest_craft/reports/STAGE_F_IMPLEMENTATION_REPORT.md), [`SYNTHETIC_DXF_TEST_MATRIX.md`](team_algoryxz/nest_craft/reports/SYNTHETIC_DXF_TEST_MATRIX.md), [`CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](team_algoryxz/nest_craft/reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md), [`FABRICATOR_FEEDBACK_TEMPLATE.md`](team_algoryxz/nest_craft/reports/FABRICATOR_FEEDBACK_TEMPLATE.md) |
 
 For complete documentation, refer to:
 - [Developer Onboarding Guide](docs/DEVELOPER_ONBOARDING.md)

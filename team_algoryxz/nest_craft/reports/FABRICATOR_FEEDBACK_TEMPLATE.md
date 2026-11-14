@@ -38,18 +38,32 @@
 
 ---
 
-## 3. Example Nesting Comparison (17-Part Industrial Batch)
+## 3. Example Nesting Comparison (17-Part Industrial Benchmark Batch)
 
 * **Stock Size:** $800\text{ mm} \times 500\text{ mm}$
-* **Torch Clearance:** $4.0\text{ mm}$
-* **Parts Batch:** 4 gussets, 6 brackets, 4 flanges, 3 base plates
+* **Torch Clearance:** $4.0\text{ mm}$, Sheet Margin: $5.0\text{ mm}$
+* **Parts Batch:** 17 parts (4 gussets, 6 brackets, 4 flanges, 3 base plates)
+* **Seeds Evaluated:** 5 fixed random seeds (`[42, 101, 202, 303, 404]`)
 
-| Evaluation Metric | Bottom-Left-Fill (Baseline) | NEST-CRAFT (Simulated Annealing) | Shop Floor Impact |
+| Evaluation Metric | Bottom-Left-Fill (Baseline) | NEST-CRAFT (Simulated Annealing Orthogonal) | Result & Qualification |
 | :--- | :---: | :---: | :--- |
-| **Plates Purchased** | 3 plates | 3 plates | Same stock purchase requirement. |
-| **Linear Cutting Span** | 2,350.00 mm | **1,946.00 mm** | **$-404.0\text{ mm}$ linear compaction ($-17.19\%$)**. |
-| **Sheet 3 Usable Remnant** | $50\text{ mm} \times 500\text{ mm}$ strip | **$434\text{ mm} \times 500\text{ mm}$ plate** | **$217,000\text{ mm}^2$ prime plate recovered for next job**. |
-| **Offcut Classification** | Unusable skeleton scrap | **Prime reusable plate** | Saved from scrap resale bin. |
+| **Discrete Sheets Required** | 3 plates | 3 plates | **Identical sheet count.** Zero discrete plate reduction. |
+| **Total Linear Cutting Extent (Mean)** | 2,350.00 mm | **1,946.00 mm** | **-17.19% lower linear cutting extent** (-404.00 mm). |
+| **Final Sheet Linear Footprint** | Parts spread to ~350 mm | Parts compacted to ~190 mm | Compacts parts closer to origin on sheet 3. |
+| **Geometric Remnant Area (Mean)** | 25,000 mm² | 227,000 mm² | Geometric unnested zone on final plate. |
+
+> [!IMPORTANT]
+> **Strict Benchmark Evidence Disclosure:**
+> The figures above are benchmark-specific measurements from a reproducible 5-seed synthetic evaluation.
+> - **Zero Sheet Purchase Reduction:** Both BLF and Simulated Annealing consumed **exactly 3 discrete plates**.
+> - **Scope of -17.19% Extent Compaction:** The $-17.19\%$ metric measures linear extent compaction along the X-axis of the final partially nested sheet.
+> - **What This Is NOT:** This linear extent result is **NOT** evidence of:
+>   - Reduced raw sheet metal purchases for the batch (3 plates required in both cases)
+>   - Higher overall sheet area utilization across purchased stock
+>   - Net material cost savings or financial savings
+>   - Guaranteed scrap resale value or shop-floor scrap reduction
+>   - Generalized production performance on real-world fabrication jobs
+> Fabricators must evaluate their own nesting efficiency using their actual production orders, remnant handling logistics, and material cutting schedules.
 
 ---
 

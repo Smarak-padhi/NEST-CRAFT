@@ -145,11 +145,15 @@ def generate_corpus(output_dir: str):
     doc10.saveas(p10)
     generated_files.append(p10)
 
-    # Case 11: Unsupported 3D Entities (2D plate with 3DFACE and POINT)
+    # Case 11: Unsupported 3D Entities (2D plate with 3DFACE, MESH, and POINT)
     doc11 = ezdxf.new('R2010')
     msp11 = doc11.modelspace()
     msp11.add_lwpolyline([(0, 0), (120, 0), (120, 80), (0, 80)], close=True)
     msp11.add_3dface([(0, 0, 10), (50, 0, 20), (50, 50, 20), (0, 50, 10)])
+    mesh11 = msp11.add_mesh()
+    mesh11.dxf.subdivision_levels = 0
+    mesh11.vertices = [(10, 10, 5), (30, 10, 5), (30, 30, 5), (10, 30, 5)]
+    mesh11.faces = [[0, 1, 2, 3]]
     msp11.add_point((60, 40))
     p11 = os.path.join(output_dir, "case11_unsupported_3d.dxf")
     doc11.saveas(p11)

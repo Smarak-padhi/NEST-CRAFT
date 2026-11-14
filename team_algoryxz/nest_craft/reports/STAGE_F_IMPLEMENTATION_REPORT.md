@@ -71,7 +71,7 @@ Generated 16 reproducible CAD edge-case files in `team_algoryxz/nest_craft/data/
 15. `case15_dxf_version_r12.dxf`: Legacy AutoCAD R12 format (`AC1009`) with `POLYLINE`.
 16. `case16_dxf_version_r2018.dxf`: Modern AutoCAD 2018 format (`AC1032`) with `LWPOLYLINE`.
 
-*Deliverable:* Documented in [`reports/REAL_WORLD_DXF_TEST_MATRIX.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_TEST_MATRIX.md) and automated via 16 tests in `tests/test_dxf_corpus.py`.
+*Deliverable:* Documented in [`reports/SYNTHETIC_DXF_TEST_MATRIX.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/SYNTHETIC_DXF_TEST_MATRIX.md) and automated via 16 tests in `tests/test_dxf_corpus.py`.
 
 ---
 

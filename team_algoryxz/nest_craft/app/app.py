@@ -123,6 +123,12 @@ with st.expander("⚙️ Advanced CAD Topology & Ingestion Controls", expanded=F
         value=False,
         help="When unchecked (default), self-intersecting or malformed contours are strictly rejected to prevent manufacturing defects."
     )
+    if allow_repaired_topology:
+        st.error(
+            "🚨 **ACTIVE CAD SAFETY OVERRIDE:** `allow_repaired_topology=True` is explicitly authorized. "
+            "Self-intersecting geometry will undergo automated topological repair (`make_valid`), which alters CAD "
+            "vertex coordinates and loop topologies. Uncheck this option to enforce strict fail-closed CAD rejection."
+        )
 
 parts_list: List[Part] = []
 batch_reports: List[Dict[str, Any]] = []
@@ -166,6 +172,7 @@ if uploaded_files:
             "Holes": r.get("holes_extracted_count", 0),
             "Unclosed Segments": r.get("unclosed_segments_count", 0),
             "Unsupported 3D": len(r.get("unsupported_3d_entities", [])),
+            "Active Overrides": ", ".join(r.get("active_overrides", [])) if r.get("active_overrides") else "None",
             "Errors": "; ".join(r.get("errors", [])) if r.get("errors") else "None",
             "Warnings": "; ".join(r.get("warnings", [])) if r.get("warnings") else "None"
         })

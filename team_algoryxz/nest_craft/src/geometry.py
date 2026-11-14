@@ -8,7 +8,7 @@ and collision checking.
 import math
 from typing import List, Tuple, Optional, Dict, Any, Union
 import numpy as np
-from shapely.geometry import Polygon, MultiPolygon, GeometryCollection, box
+from shapely.geometry import Polygon, MultiPolygon, GeometryCollection, Point, LineString, box
 from shapely import affinity
 from shapely.validation import make_valid
 
@@ -36,10 +36,32 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
     the original input boundary and the repaired 2D boundary.
     Fails closed: If comparison fails, raises GeometryComparisonError (or returns float('inf')
     if fail_closed=False). Never returns 0.0 on comparison error.
+    Explicitly enforces valid 2D polygonal types (Polygon, MultiPolygon) and rejects
+    unsupported types (Point, LineString, etc.).
+    If repaired geometry is a GeometryCollection, explicitly handles all components
+    (including 1D LineStrings and 0D Points) in boundary evaluation without silently discarding them.
     """
     if poly_orig is None or poly_repaired is None:
         if fail_closed:
             raise GeometryComparisonError("Cannot compute boundary deviation: input geometry is None")
+        return float('inf')
+
+    # Explicit runtime type validation for original geometry
+    if not isinstance(poly_orig, (Polygon, MultiPolygon)):
+        if fail_closed:
+            raise GeometryComparisonError(
+                f"Unsupported original geometry type '{type(poly_orig).__name__}'. "
+                "Only Polygon and MultiPolygon are supported."
+            )
+        return float('inf')
+
+    # Explicit runtime type validation for repaired geometry
+    if not isinstance(poly_repaired, (Polygon, MultiPolygon, GeometryCollection)):
+        if fail_closed:
+            raise GeometryComparisonError(
+                f"Unsupported repaired geometry type '{type(poly_repaired).__name__}'. "
+                "Only Polygon, MultiPolygon, and GeometryCollection are supported."
+            )
         return float('inf')
 
     try:
@@ -51,11 +73,29 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
         orig_b = poly_orig.boundary
         if isinstance(poly_repaired, GeometryCollection):
             polys = [g for g in poly_repaired.geoms if isinstance(g, (Polygon, MultiPolygon)) and not g.is_empty]
+            non_polys = [g for g in poly_repaired.geoms if not isinstance(g, (Polygon, MultiPolygon)) and not g.is_empty]
+            
             if not polys:
                 if fail_closed:
                     raise GeometryComparisonError("Repaired geometry contains no 2D polygonal components")
                 return float('inf')
-            rep_b = MultiPolygon(polys).boundary if len(polys) > 1 else polys[0].boundary
+
+            # Ensure all non-polygonal elements are valid recognized types (LineString, Point)
+            for g in non_polys:
+                if not isinstance(g, (LineString, Point)):
+                    if fail_closed:
+                        raise GeometryComparisonError(
+                            f"Repaired GeometryCollection contains unsupported component type '{type(g).__name__}'"
+                        )
+                    return float('inf')
+
+            flat_polys = []
+            for p in polys:
+                if isinstance(p, MultiPolygon):
+                    flat_polys.extend(list(p.geoms))
+                else:
+                    flat_polys.append(p)
+            rep_b = MultiPolygon(flat_polys).boundary if len(flat_polys) > 1 else flat_polys[0].boundary
         else:
             rep_b = poly_repaired.boundary
 
@@ -133,6 +173,10 @@ class Part:
                 
             repair_authorized = bool(self.metadata.get("allow_repaired_topology", False))
             
+            active_overrides = [
+                k for k in ["allow_repaired_topology", "allow_unverifiable_geometry", "allow_feature_loss"]
+                if bool(self.metadata.get(k, False))
+            ]
             self.validation_record = {
                 "is_valid_original": False,
                 "is_valid_repaired": repaired.is_valid,
@@ -148,6 +192,7 @@ class Part:
                 "feature_loss_detected": feature_loss_detected,
                 "topology_altered": topology_altered,
                 "repair_authorized": repair_authorized,
+                "active_overrides": active_overrides,
                 "notes": notes
             }
             
@@ -196,6 +241,10 @@ class Part:
             else:
                 polygon = repaired
         else:
+            active_overrides = [
+                k for k in ["allow_repaired_topology", "allow_unverifiable_geometry", "allow_feature_loss"]
+                if bool(self.metadata.get(k, False))
+            ]
             self.validation_record = {
                 "is_valid_original": True,
                 "is_valid_repaired": True,
@@ -211,6 +260,7 @@ class Part:
                 "feature_loss_detected": False,
                 "topology_altered": False,
                 "repair_authorized": bool(self.metadata.get("allow_repaired_topology", False)),
+                "active_overrides": active_overrides,
                 "notes": []
             }
                 

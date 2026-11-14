@@ -14,7 +14,7 @@
 | **Geometry Engine** | **Fail-Closed & Hardened** | `compute_boundary_deviation` strictly fails closed (`GeometryComparisonError`), preventing unverified or corrupt geometry from passing as zero deviation. DEF-01 closed. |
 | **Optimization Core** | **BLF & SA Operational** | BLF baseline and Simulated Annealing with Part-in-Part cavity nesting verified across fixed seeds. |
 | **Benchmark Status** | **Locked & Proven** | Dedicated reproducibility test (`test_benchmark_reproducibility.py`) permanently locks the 17-part, 5-seed orthogonal baseline at **1,946.00 mm** (-17.19% compaction, 3 discrete sheets). |
-| **CAD / DXF Ingestion** | **16-Case Test Corpus** | Evaluated against 16 synthetic edge cases in `REAL_WORLD_DXF_TEST_MATRIX.md` (splines, bulges, open contours, nested holes, narrow slots, large coordinates, R12/R2018). |
+| **CAD / DXF Ingestion** | **16-Case Test Corpus** | Evaluated against 16 synthetic edge cases in `SYNTHETIC_DXF_TEST_MATRIX.md` (splines, bulges, open contours, nested holes, narrow slots, large coordinates, R12/R2018). |
 | **CAM Export Handoff** | **Protocol Defined** | 6 validated DXF export artifacts in `data/cam_export_samples/`. Full protocol and checklist defined in `CAM_INTEROPERABILITY_TEST_PROTOCOL.md`. |
 | **Fabricator Validation** | **Prepared Package** | Non-commercial fabricator evaluation package and structured feedback survey authored in `FABRICATOR_FEEDBACK_TEMPLATE.md`. |
 | **Hackathon Readiness** | **READY (VERIFIED)** | Approved for controlled prototype demonstration at Odisha AI Hackathon 2026. |
@@ -56,7 +56,7 @@
 ### Stage F: Reliability Hardening & Real-World Validation Preparation (Current Master)
 - **Fail-Closed Geometry Validation:** Resolved fail-open behavior in `compute_boundary_deviation()`. Replaced generic fallback to 0.0 with `GeometryComparisonError` and `float('inf')`. Guarded `Part.__init__` so comparison failures cannot accidentally authorize damaged geometry.
 - **Locked Benchmark Configuration:** Identified and documented historical iteration typo (ESICUP used 25 iterations; Industrial used 20 iterations). Locked complete 17-part, 5-seed configuration in `test_benchmark_reproducibility.py` (mean $1,946.00\text{ mm}$, $17.19\%$ compaction, 3 sheets).
-- **16-Case Real-World DXF Test Corpus:** Built `data/dxf_test_corpus/` containing synthetic edge cases and documented all results in `REAL_WORLD_DXF_TEST_MATRIX.md`. Added 16 tests in `test_dxf_corpus.py`.
+- **16-Case Synthetic DXF Test Corpus:** Built `data/dxf_test_corpus/` containing synthetic edge cases and documented all results in `SYNTHETIC_DXF_TEST_MATRIX.md`. Added 16 tests in `test_dxf_corpus.py`. Real-world drawings are governed by `REAL_WORLD_DXF_INTAKE_PROCESS.md`.
 - **CAM Interoperability Protocol:** Produced 6 validated export DXF layouts in `data/cam_export_samples/` and defined step-by-step SOP in `CAM_INTEROPERABILITY_TEST_PROTOCOL.md`.
 - **Fabricator Validation Package:** Created plain-language shop guide and structured evaluation survey in `FABRICATOR_FEEDBACK_TEMPLATE.md` with complete truthfulness disclosures.
 - **Total Test Count:** **109 / 109 tests passing** across 11 test suites.

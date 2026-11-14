@@ -181,7 +181,10 @@ def parse_esicup_xml(file_path: str, allow_repaired_topology: bool = False) -> T
     metadata["total_quantity"] = sum(p.quantity for p in parts)
     return parts, metadata
 
-def validate_and_parse_dxf(file_path: str, allow_repaired_topology: bool = False) -> Tuple[List[Part], Dict[str, Any]]:
+def validate_and_parse_dxf(file_path: str,
+                           allow_repaired_topology: bool = False,
+                           allow_unverifiable_geometry: bool = False,
+                           allow_feature_loss: bool = False) -> Tuple[List[Part], Dict[str, Any]]:
     """
     Validates and parses an AutoCAD DXF file with comprehensive reliability guarantees:
     1. Supports LWPOLYLINE (including arc bulges), POLYLINE, CIRCLE, ARC, LINE, SPLINE, ELLIPSE.
@@ -189,13 +192,23 @@ def validate_and_parse_dxf(file_path: str, allow_repaired_topology: bool = False
     3. Stitches connected open LINE and ARC entities using precision network polygonization.
     4. Topologically detects concentric interior cutouts and assigns them as polygon holes.
     5. Flags unsupported 3D entities and unclosed line segments with explicit error/warning messages.
+    6. Tracks active CAD safety overrides and records them prominently in validation reports.
     
     Returns:
         (parts, validation_report)
     """
+    active_overrides = []
+    if allow_repaired_topology:
+        active_overrides.append("allow_repaired_topology")
+    if allow_unverifiable_geometry:
+        active_overrides.append("allow_unverifiable_geometry")
+    if allow_feature_loss:
+        active_overrides.append("allow_feature_loss")
+
     report: Dict[str, Any] = {
         "file_path": file_path,
         "is_valid": True,
+        "active_overrides": active_overrides,
         "total_entities_inspected": 0,
         "entity_counts": {},
         "supported_contour_entities": 0,
@@ -207,6 +220,13 @@ def validate_and_parse_dxf(file_path: str, allow_repaired_topology: bool = False
         "warnings": [],
         "errors": []
     }
+    
+    if active_overrides:
+        for ov in active_overrides:
+            report["warnings"].append(
+                f"ACTIVE CAD OVERRIDE: '{ov}=True' was explicitly authorized for '{os.path.basename(file_path)}'. "
+                "Automated repair or tolerance relaxation is active and may modify CAD boundary definitions."
+            )
     
     if not os.path.exists(file_path):
         report["is_valid"] = False
@@ -444,7 +464,9 @@ def validate_and_parse_dxf(file_path: str, allow_repaired_topology: bool = False
                     "holes_count": hole_count,
                     "gross_area": round(outer_poly.area, 2),
                     "net_area": round(part_poly.area, 2),
-                    "allow_repaired_topology": allow_repaired_topology
+                    "allow_repaired_topology": allow_repaired_topology,
+                    "allow_unverifiable_geometry": allow_unverifiable_geometry,
+                    "allow_feature_loss": allow_feature_loss
                 }
                 try:
                     parts.append(Part(part_poly, part_id=part_id, quantity=1, metadata=metadata))
@@ -456,12 +478,21 @@ def validate_and_parse_dxf(file_path: str, allow_repaired_topology: bool = False
     report["holes_extracted_count"] = total_holes
     return parts, report
 
-def parse_dxf(file_path: str, strict: bool = False, allow_repaired_topology: bool = False) -> List[Part]:
+def parse_dxf(file_path: str,
+              strict: bool = False,
+              allow_repaired_topology: bool = False,
+              allow_unverifiable_geometry: bool = False,
+              allow_feature_loss: bool = False) -> List[Part]:
     """
     Reads 2D boundary contours from an AutoCAD DXF file with backward-compatible API.
     If strict=True, raises DXFValidationError on fatal errors or missing parts.
     """
-    parts, report = validate_and_parse_dxf(file_path, allow_repaired_topology=allow_repaired_topology)
+    parts, report = validate_and_parse_dxf(
+        file_path,
+        allow_repaired_topology=allow_repaired_topology,
+        allow_unverifiable_geometry=allow_unverifiable_geometry,
+        allow_feature_loss=allow_feature_loss
+    )
     if strict and (not report["is_valid"] or not parts):
         err_msg = "; ".join(report["errors"]) if report["errors"] else "Failed to parse valid DXF parts"
         raise DXFValidationError(err_msg)
