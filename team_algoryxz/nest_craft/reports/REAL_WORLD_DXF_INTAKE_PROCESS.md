@@ -125,9 +125,9 @@ For each received file, record:
 
 ### Step 9: Commercial CAM Import & Post-Processing
 - Provide exported DXF to fabricator CAM programmer.
-- Execute import SOP according to [`CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md).
+- Execute import SOP according to [`CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](./CAM_INTEROPERABILITY_TEST_PROTOCOL.md).
 - Record lead-in behavior, micro-tab feasibility, cutting sequence, and collision check results.
 
 ### Step 10: Matrix Publication & Archival
-- Enter complete case audit record into [`REAL_WORLD_DXF_TEST_MATRIX.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_TEST_MATRIX.md).
+- Enter complete case audit record into [`REAL_WORLD_DXF_TEST_MATRIX.md`](./REAL_WORLD_DXF_TEST_MATRIX.md).
 - Preserve all working files, logs, and CAM audit records in version-controlled project storage.

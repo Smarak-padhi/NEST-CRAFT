@@ -110,7 +110,30 @@ def parse_esicup_txt(file_path: str, allow_repaired_topology: bool = False) -> T
             i += 1
             
         if len(coords) >= 3:
-            poly = Polygon(coords)
+            # Check for multiple closed sub-loops in vertex stream (e.g. multipart shapes in ESICUP)
+            sub_loops = []
+            curr_loop = []
+            for pt in coords:
+                curr_loop.append(pt)
+                if len(curr_loop) >= 4 and pt == curr_loop[0]:
+                    sub_loops.append(curr_loop)
+                    curr_loop = []
+            if curr_loop:
+                if sub_loops:
+                    sub_loops.append(curr_loop)
+                else:
+                    sub_loops = [curr_loop]
+            
+            if len(sub_loops) > 1:
+                polys = [Polygon(sl) for sl in sub_loops if len(sl) >= 3]
+                valid_sub = [p for p in polys if p.is_valid and p.area > 1e-4]
+                if len(valid_sub) == len(polys) and len(valid_sub) > 0:
+                    poly = MultiPolygon(valid_sub) if len(valid_sub) > 1 else valid_sub[0]
+                else:
+                    poly = Polygon(coords)
+            else:
+                poly = Polygon(coords)
+
             meta = {
                 "source_file": os.path.basename(file_path),
                 "piece_index": idx + 1,

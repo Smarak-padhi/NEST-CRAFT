@@ -2,8 +2,8 @@
 
 **Document Purpose:** Living audit matrix for genuine production CAD drawings obtained from external sheet metal fabrication shops.  
 **Version:** Stage G Engineering Release  
-**Intake Protocol:** Governed strictly by [`REAL_WORLD_DXF_INTAKE_PROCESS.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_INTAKE_PROCESS.md).  
-**Synthetic Corpus Reference:** For the 16-case synthetic geometry stress test corpus, see [`SYNTHETIC_DXF_TEST_MATRIX.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/SYNTHETIC_DXF_TEST_MATRIX.md).  
+**Intake Protocol:** Governed strictly by [`REAL_WORLD_DXF_INTAKE_PROCESS.md`](./REAL_WORLD_DXF_INTAKE_PROCESS.md).  
+**Synthetic Corpus Reference:** For the 16-case synthetic geometry stress test corpus, see [`SYNTHETIC_DXF_TEST_MATRIX.md`](./SYNTHETIC_DXF_TEST_MATRIX.md).  
 
 ---
 
@@ -42,7 +42,7 @@
 
 ## 3. Fabricator Engagement Progress
 
-1. **Outreach & Communication:** Active distribution of [`FABRICATOR_FEEDBACK_TEMPLATE.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/FABRICATOR_FEEDBACK_TEMPLATE.md) to regional fabrication MSMEs and CNC cutting workshops.
-2. **CAD Ingestion Readiness:** Ingestion engine validated against 16 synthetic boundary conditions in [`SYNTHETIC_DXF_TEST_MATRIX.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/SYNTHETIC_DXF_TEST_MATRIX.md).
-3. **CAM Interoperability SOP:** Ready for operator trial via [`CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/CAM_INTEROPERABILITY_TEST_PROTOCOL.md).
+1. **Outreach & Communication:** Active distribution of [`FABRICATOR_FEEDBACK_TEMPLATE.md`](./FABRICATOR_FEEDBACK_TEMPLATE.md) to regional fabrication MSMEs and CNC cutting workshops.
+2. **CAD Ingestion Readiness:** Ingestion engine validated against 16 synthetic boundary conditions in [`SYNTHETIC_DXF_TEST_MATRIX.md`](./SYNTHETIC_DXF_TEST_MATRIX.md).
+3. **CAM Interoperability SOP:** Ready for operator trial via [`CAM_INTEROPERABILITY_TEST_PROTOCOL.md`](./CAM_INTEROPERABILITY_TEST_PROTOCOL.md).
 4. **Target Completion:** Population of this matrix with 5–10 permissioned cases upon completion of fabricator pilot trials.

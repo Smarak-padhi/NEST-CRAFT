@@ -10,9 +10,9 @@
 ## 1. What NEST-CRAFT Does & Does Not Do
 
 ### What It Does:
-1. **Automated 2D Profile Packing:** Ingests planar AutoCAD DXF vector drawings of parts (gussets, brackets, flanges, base plates) and packs them efficiently across standard raw sheet metal plates.
-2. **Linear Cutting Extent Compaction:** Heuristically groups components along the X-axis using Simulated Annealing, reducing total linear cutting span by up to **$17.19\%$** compared to standard Bottom-Left-Fill (BLF).
-3. **Prime Remnant Offcut Preservation:** Rather than spreading parts sparsely across the entire final sheet, it compacts parts to the left side, preserving an intact, rectangular **virgin remnant plate** ($> 100\text{ mm}$ width) on the right for future production jobs.
+1. **Automated 2D Profile Packing:** Ingests planar AutoCAD DXF vector drawings of parts (gussets, brackets, flanges, base plates) and packs them across standard raw sheet metal plate boundaries.
+2. **Linear Extent Compaction:** Heuristically groups components along the X-axis using Simulated Annealing, achieving a 17.19% mean linear extent compaction on the 17-part synthetic benchmark (from 2,350.00 mm to 1,946.00 mm across 5 seeds) compared to standard Bottom-Left-Fill (BLF). Both methods consume exactly 3 sheets.
+3. **Contiguous Unnested Zone Preservation:** Compacts parts along the X-axis on the final sheet rather than spreading them across the full length, leaving a contiguous unnested boundary area.
 4. **Part-in-Part Cavity Nesting:** Identifies large interior apertures in components (e.g. flange center cutouts) and nests smaller parts inside them using inward kerf buffering.
 5. **Multi-Layer DXF Export:** Generates clean AutoCAD R2010 DXF layouts with structured layers (`SHEET_BOUNDARY`, `CUT_CONTOUR`, `HOLE_CONTOUR`, `PART_IN_PART_CHILD`).
 

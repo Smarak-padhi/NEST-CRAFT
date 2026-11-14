@@ -4,7 +4,7 @@
 > **PROVENANCE & INTEGRITY NOTICE:**
 > All 16 DXF test files in this evaluation matrix were **synthetically generated** using `ezdxf` (version 1.4.5) to test geometric parser boundary conditions, topological edge cases, and fail-closed error handling across AutoCAD R12, R2010, and R2018 specifications.
 > **None of these drawings are customer-provided, production fabricator drawings, or shop-floor production files.**
-> This synthetic test suite does **not** constitute commercial fabricator validation. Real-world fabricator intake is governed separately by [`REAL_WORLD_DXF_INTAKE_PROCESS.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_INTAKE_PROCESS.md) and tracked in [`REAL_WORLD_DXF_TEST_MATRIX.md`](file:///c:/Users/smara/Desktop/Odisha%20AI%20hackathon/team_algoryxz/nest_craft/reports/REAL_WORLD_DXF_TEST_MATRIX.md).
+> This synthetic test suite does **not** constitute commercial fabricator validation. Real-world fabricator intake is governed separately by [`REAL_WORLD_DXF_INTAKE_PROCESS.md`](./REAL_WORLD_DXF_INTAKE_PROCESS.md) and tracked in [`REAL_WORLD_DXF_TEST_MATRIX.md`](./REAL_WORLD_DXF_TEST_MATRIX.md).
 
 ---
 

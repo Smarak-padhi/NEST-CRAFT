@@ -8,7 +8,7 @@ and never interpret a comparison failure as zero deviation.
 import math
 import pytest
 from unittest.mock import patch
-from shapely.geometry import Polygon, MultiPolygon, GeometryCollection, Point, LineString
+from shapely.geometry import Polygon, MultiPolygon, GeometryCollection, Point, LineString, LinearRing
 
 from team_algoryxz.nest_craft.src.geometry import (
     Part,
@@ -161,29 +161,118 @@ def test_compute_boundary_deviation_unsupported_repaired_types_rejected():
 
     assert compute_boundary_deviation(poly, point, fail_closed=False) == float('inf')
 
-def test_compute_boundary_deviation_mixed_geometry_collection_handled():
-    """Verify GeometryCollection with mixed types (Polygon + Point/LineString) is explicitly handled."""
-    poly1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
-    mixed_spike = GeometryCollection([poly1, LineString([(10, 10), (20, 10)])])
-    mixed_point = GeometryCollection([poly1, Point(15, 5)])
-
-    # Computes valid boundary deviation without crashing or silent unhandled drops
-    dist_spike = compute_boundary_deviation(poly1, mixed_spike, fail_closed=True)
-    assert isinstance(dist_spike, float) and dist_spike == 0.0
-
-    dist_point = compute_boundary_deviation(poly1, mixed_point, fail_closed=True)
-    assert isinstance(dist_point, float) and dist_point == 0.0
-
-    # GeometryCollection with NO 2D polygonal components must fail closed
-    gc_no_polys = GeometryCollection([Point(0, 0), LineString([(0, 0), (5, 5)])])
+def test_compute_boundary_deviation_polygon_plus_external_linestring_rejected():
+    """Verify GeometryCollection with Polygon + LineString raises GeometryComparisonError."""
+    poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    gc = GeometryCollection([poly, LineString([(10, 10), (20, 10)])])
     with pytest.raises(GeometryComparisonError) as exc:
-        compute_boundary_deviation(poly1, gc_no_polys, fail_closed=True)
-    assert "no 2D polygonal components" in str(exc.value)
+        compute_boundary_deviation(poly, gc, fail_closed=True)
+    assert "non-polygonal component of type 'LineString'" in str(exc.value)
+    assert compute_boundary_deviation(poly, gc, fail_closed=False) == float('inf')
 
-    assert compute_boundary_deviation(poly1, gc_no_polys, fail_closed=False) == float('inf')
+def test_compute_boundary_deviation_polygon_plus_point_rejected():
+    """Verify GeometryCollection with Polygon + Point raises GeometryComparisonError."""
+    poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    gc = GeometryCollection([poly, Point(15, 5)])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(poly, gc, fail_closed=True)
+    assert "non-polygonal component of type 'Point'" in str(exc.value)
+    assert compute_boundary_deviation(poly, gc, fail_closed=False) == float('inf')
 
-def test_compute_boundary_deviation_valid_pairs_supported():
-    """Verify valid pairs (Polygon, MultiPolygon, pure GeometryCollection) compute valid distances."""
+def test_compute_boundary_deviation_polygon_plus_empty_linestring_rejected():
+    """Verify GeometryCollection with Polygon + empty component raises GeometryComparisonError."""
+    poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    gc = GeometryCollection([poly, LineString()])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(poly, gc, fail_closed=True)
+    assert "empty component" in str(exc.value) or "non-polygonal" in str(exc.value)
+    assert compute_boundary_deviation(poly, gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_polygon_plus_unsupported_geometry_rejected():
+    """Verify GeometryCollection with LinearRing or unsupported component raises GeometryComparisonError."""
+    poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    ring = LinearRing([(0, 0), (5, 0), (5, 5), (0, 5)])
+    gc = GeometryCollection([poly, ring])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(poly, gc, fail_closed=True)
+    assert "LinearRing" in str(exc.value)
+    assert compute_boundary_deviation(poly, gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_multiple_polygons_with_non_polygonal_fragment_rejected():
+    """Verify MultiPolygon plus non-polygonal fragment in GeometryCollection raises GeometryComparisonError."""
+    p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    p2 = Polygon([(20, 0), (30, 0), (30, 10), (20, 10)])
+    gc = GeometryCollection([p1, p2, Point(50, 50)])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(MultiPolygon([p1, p2]), gc, fail_closed=True)
+    assert "non-polygonal" in str(exc.value)
+    assert compute_boundary_deviation(MultiPolygon([p1, p2]), gc, fail_closed=False) == float('inf')
+
+def test_compute_boundary_deviation_geometry_collection_only_non_polygonal_rejected():
+    """Verify GeometryCollection containing only non-polygonal components raises GeometryComparisonError."""
+    poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    gc = GeometryCollection([Point(0, 0), LineString([(0, 0), (5, 5)])])
+    with pytest.raises(GeometryComparisonError) as exc:
+        compute_boundary_deviation(poly, gc, fail_closed=True)
+    assert "non-polygonal" in str(exc.value) or "no 2D polygonal components" in str(exc.value)
+    assert compute_boundary_deviation(poly, gc, fail_closed=False) == float('inf')
+
+def test_part_init_make_valid_polygonal_and_non_polygonal_fragments_rejected():
+    """Verify Part.__init__ rejects repair output containing non-polygonal fragments unless fully authorized."""
+    # Self-intersecting contour with needle spike that make_valid turns into (Polygon + LineString)
+    spike_poly = Polygon([(0, 0), (100, 0), (100, 50), (200, 50), (100, 50), (100, 100), (0, 100)])
+    assert not spike_poly.is_valid
+
+    # Unauthorized: raises GeometryComparisonError / CADTopologyError
+    with pytest.raises(CADTopologyError):
+        Part(spike_poly, part_id="spike_unauth")
+
+    # Only allow_repaired_topology: fails closed on comparison error
+    with pytest.raises(GeometryComparisonError):
+        Part(spike_poly, part_id="spike_partial1", metadata={"allow_repaired_topology": True})
+
+    # allow_repaired_topology + allow_unverifiable_geometry: fails closed on feature loss detected
+    with pytest.raises(CADTopologyError) as exc_feat:
+        Part(spike_poly, part_id="spike_partial2", metadata={
+            "allow_repaired_topology": True,
+            "allow_unverifiable_geometry": True
+        })
+    assert "Critical feature loss" in str(exc_feat.value) or "feature loss" in str(exc_feat.value).lower()
+
+    # All three overrides active: accepted, but deviation remains inf, feature_loss_detected remains True
+    p = Part(spike_poly, part_id="spike_auth", metadata={
+        "allow_repaired_topology": True,
+        "allow_unverifiable_geometry": True,
+        "allow_feature_loss": True
+    })
+    assert math.isinf(p.validation_record["hausdorff_distance"])
+    assert p.validation_record["feature_loss_detected"] is True
+    assert p.validation_record["topology_altered"] is True
+    assert sorted(p.validation_record["active_overrides"]) == [
+        "allow_feature_loss", "allow_repaired_topology", "allow_unverifiable_geometry"
+    ]
+
+def test_part_init_tiny_polygon_component_rejected():
+    """Verify Part.__init__ rejects repaired sub-threshold components unless allow_feature_loss=True."""
+    p_large = Polygon([(0, 0), (100, 0), (100, 100), (0, 100)])
+    p_tiny = Polygon([(200, 200), (200.0001, 200), (200.0001, 200.0001), (200, 200.0001)])
+    mp = MultiPolygon([p_large, p_tiny])
+    bowtie = Polygon([(0, 0), (100, 100), (0, 100), (100, 0)])
+
+    with patch("team_algoryxz.nest_craft.src.geometry.make_valid", return_value=mp):
+        with pytest.raises(CADTopologyError) as exc:
+            Part(bowtie, part_id="tiny_comp", metadata={"allow_repaired_topology": True})
+        assert "sub-threshold" in str(exc.value) or "feature loss" in str(exc.value).lower()
+
+        # Authorized with allow_feature_loss
+        p = Part(bowtie, part_id="tiny_comp_auth", metadata={
+            "allow_repaired_topology": True,
+            "allow_feature_loss": True
+        })
+        assert p.polygon.area >= 10000.0
+
+def test_compute_boundary_deviation_valid_polygon_and_multipolygon_behavior():
+    """Verify compute_boundary_deviation returns accurate metrics for valid Polygons and MultiPolygons."""
     p1 = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
     p2 = Polygon([(0, 0), (10, 0), (10, 12), (0, 12)])
     mp1 = MultiPolygon([p1, Polygon([(20, 20), (30, 20), (30, 30), (20, 30)])])
@@ -205,7 +294,7 @@ def test_compute_boundary_deviation_valid_pairs_supported():
 
     # Polygon to pure polygonal GeometryCollection
     dist_gc = compute_boundary_deviation(p1, gc_pure)
-    assert isinstance(dist_gc, float) and dist_gc >= 0.0
+    assert isinstance(dist_gc, float) and dist_gc == 2.0
 
 def test_part_validation_record_active_overrides_tracking():
     """Verify Part.validation_record accurately tracks active unsafe overrides."""

@@ -38,8 +38,9 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
     if fail_closed=False). Never returns 0.0 on comparison error.
     Explicitly enforces valid 2D polygonal types (Polygon, MultiPolygon) and rejects
     unsupported types (Point, LineString, etc.).
-    If repaired geometry is a GeometryCollection, explicitly handles all components
-    (including 1D LineStrings and 0D Points) in boundary evaluation without silently discarding them.
+    Under fail-closed policy, any repaired GeometryCollection containing non-polygonal
+    components, empty components, or unsupported geometry types is rejected.
+    Pure polygonal GeometryCollections are flattened and measured.
     """
     if poly_orig is None or poly_repaired is None:
         if fail_closed:
@@ -72,22 +73,24 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
 
         orig_b = poly_orig.boundary
         if isinstance(poly_repaired, GeometryCollection):
-            polys = [g for g in poly_repaired.geoms if isinstance(g, (Polygon, MultiPolygon)) and not g.is_empty]
-            non_polys = [g for g in poly_repaired.geoms if not isinstance(g, (Polygon, MultiPolygon)) and not g.is_empty]
-            
-            if not polys:
-                if fail_closed:
-                    raise GeometryComparisonError("Repaired geometry contains no 2D polygonal components")
-                return float('inf')
-
-            # Ensure all non-polygonal elements are valid recognized types (LineString, Point)
-            for g in non_polys:
-                if not isinstance(g, (LineString, Point)):
+            for g in poly_repaired.geoms:
+                if g is None or g.is_empty:
+                    if fail_closed:
+                        raise GeometryComparisonError("Repaired GeometryCollection contains empty component")
+                    return float('inf')
+                if not isinstance(g, (Polygon, MultiPolygon)):
                     if fail_closed:
                         raise GeometryComparisonError(
-                            f"Repaired GeometryCollection contains unsupported component type '{type(g).__name__}'"
+                            f"Repaired GeometryCollection contains non-polygonal component of type '{type(g).__name__}'. "
+                            "Under fail-closed policy, repaired collections with non-polygonal components are rejected."
                         )
                     return float('inf')
+
+            polys = list(poly_repaired.geoms)
+            if not polys:
+                if fail_closed:
+                    raise GeometryComparisonError("Repaired GeometryCollection contains no 2D polygonal components")
+                return float('inf')
 
             flat_polys = []
             for p in polys:
@@ -95,6 +98,12 @@ def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
                     flat_polys.extend(list(p.geoms))
                 else:
                     flat_polys.append(p)
+
+            if not flat_polys:
+                if fail_closed:
+                    raise GeometryComparisonError("Repaired GeometryCollection contains no 2D polygonal components")
+                return float('inf')
+
             rep_b = MultiPolygon(flat_polys).boundary if len(flat_polys) > 1 else flat_polys[0].boundary
         else:
             rep_b = poly_repaired.boundary
@@ -161,9 +170,30 @@ class Part:
                 topology_altered = True
                 notes.append(f"area: {input_area:.2f} -> {repaired_area:.2f} (delta {area_delta_pct*100.0:.2f}%)")
                 
+            # Check for non-polygonal or sub-threshold components in repair output
+            non_polys = []
+            tiny_polys = []
             if isinstance(repaired, GeometryCollection):
                 topology_altered = True
-                notes.append("repair produced non-polygonal elements (GeometryCollection)")
+                feature_loss_detected = True
+                non_polys = [g for g in repaired.geoms if not isinstance(g, (Polygon, MultiPolygon))]
+                tiny_polys = [g for g in repaired.geoms if isinstance(g, (Polygon, MultiPolygon)) and g.area <= 1e-4]
+                if non_polys:
+                    types_str = ", ".join(sorted(list({type(g).__name__ for g in non_polys})))
+                    notes.append(f"repair produced non-polygonal elements ({types_str})")
+                if tiny_polys:
+                    notes.append(f"repair produced {len(tiny_polys)} sub-threshold polygonal elements (area <= 1e-4)")
+            elif isinstance(repaired, MultiPolygon):
+                tiny_polys = [g for g in repaired.geoms if g.area <= 1e-4]
+                if tiny_polys:
+                    topology_altered = True
+                    feature_loss_detected = True
+                    notes.append(f"repair produced {len(tiny_polys)} sub-threshold polygonal components (area <= 1e-4)")
+            elif isinstance(repaired, Polygon):
+                if repaired.area <= 1e-4:
+                    topology_altered = True
+                    feature_loss_detected = True
+                    notes.append("repair produced sub-threshold polygonal component (area <= 1e-4)")
                 
             max_dev_threshold = float(self.metadata.get("max_boundary_deviation", 0.5))
             if hausdorff_dist > max_dev_threshold:
@@ -172,6 +202,8 @@ class Part:
                     notes.append(f"boundary deviation {hausdorff_dist:.3f}mm exceeds tolerance {max_dev_threshold:.3f}mm")
                 
             repair_authorized = bool(self.metadata.get("allow_repaired_topology", False))
+            allow_feature_loss = bool(self.metadata.get("allow_feature_loss", False))
+            allow_unverifiable = bool(self.metadata.get("allow_unverifiable_geometry", False))
             
             active_overrides = [
                 k for k in ["allow_repaired_topology", "allow_unverifiable_geometry", "allow_feature_loss"]
@@ -198,7 +230,6 @@ class Part:
             
             if comparison_failed:
                 # Fails closed on comparison failure: cannot verify feature preservation
-                allow_unverifiable = bool(self.metadata.get("allow_unverifiable_geometry", False))
                 if not allow_unverifiable:
                     diag = "; ".join(notes) if notes else "boundary comparison failed"
                     raise GeometryComparisonError(
@@ -214,7 +245,6 @@ class Part:
                     f"Geometry must be corrected in CAD or explicitly authorized via metadata['allow_repaired_topology']=True."
                 )
                 
-            allow_feature_loss = bool(self.metadata.get("allow_feature_loss", False))
             if feature_loss_detected and not allow_feature_loss:
                 dev_str = f"{hausdorff_dist:.3f} mm" if not math.isinf(hausdorff_dist) else "infinite/uncomputed"
                 raise CADTopologyError(
@@ -223,8 +253,14 @@ class Part:
                     f"Automated repair collapsed physical features. Requires explicit metadata['allow_feature_loss']=True."
                 )
                 
-            # If authorized, extract all polygon components without silently discarding any
+            # If authorized, extract nestable polygon components
             if isinstance(repaired, GeometryCollection):
+                if (non_polys or tiny_polys) and not allow_feature_loss:
+                    raise CADTopologyError(
+                        f"Geometry validation failed for part '{part_id}': Repair produced non-nestable components "
+                        f"(non-polygonal: {len(non_polys)}, sub-threshold: {len(tiny_polys)}). "
+                        f"Requires explicit metadata['allow_feature_loss']=True."
+                    )
                 polys = [g for g in repaired.geoms if isinstance(g, (Polygon, MultiPolygon)) and g.area > 1e-4]
                 flat_polys = []
                 for p in polys:
@@ -238,7 +274,22 @@ class Part:
                     polygon = MultiPolygon(flat_polys)
                 else:
                     raise CADTopologyError(f"Repaired geometry for part '{part_id}' contains no 2D polygonal area.")
+            elif isinstance(repaired, MultiPolygon):
+                if tiny_polys and not allow_feature_loss:
+                    raise CADTopologyError(
+                        f"Geometry validation failed for part '{part_id}': Repair produced {len(tiny_polys)} sub-threshold components. "
+                        f"Requires explicit metadata['allow_feature_loss']=True."
+                    )
+                polys = [g for g in repaired.geoms if g.area > 1e-4]
+                if len(polys) == 1:
+                    polygon = polys[0]
+                elif len(polys) > 1:
+                    polygon = MultiPolygon(polys)
+                else:
+                    raise CADTopologyError(f"Repaired geometry for part '{part_id}' contains no 2D polygonal area.")
             else:
+                if repaired.area <= 1e-4 and not allow_feature_loss:
+                    raise CADTopologyError(f"Repaired geometry for part '{part_id}' contains no 2D polygonal area.")
                 polygon = repaired
         else:
             active_overrides = [

@@ -1,6 +1,6 @@
 # NEST-CRAFT — Project Status & Handover Ledger
 
-**Current Engineering Stage:** Stage F Completed & Verified (Reliability Hardening & Real-World Validation Preparation)  
+**Current Engineering Stage:** Stage G.1 Completed & Verified (GeometryCollection Integrity Closure & Strict Component Validation)  
 **Last Audit Date:** 2026-11-14  
 **Repository Branch:** `main`
 
@@ -10,8 +10,8 @@
 
 | Dimension | Current State | Verifiable Evidence |
 | :--- | :---: | :--- |
-| **Automated Tests** | **109 / 109 Passing** (100%) | Verified via pytest in clean repository root (74.47s execution across 11 test suites). |
-| **Geometry Engine** | **Fail-Closed & Hardened** | `compute_boundary_deviation` strictly fails closed (`GeometryComparisonError`), preventing unverified or corrupt geometry from passing as zero deviation. DEF-01 closed. |
+| **Automated Tests** | **121 / 121 Passing** (100%) | Verified via pytest in clean repository root (across 12 test suites). |
+| **Geometry Engine** | **Strict Fail-Closed & Hardened** | `compute_boundary_deviation` strictly validates runtime types, rejects non-polygonal or empty components in `GeometryCollection`s, and flattens pure polygonal collections. `Part.__init__` rejects non-polygonal or sub-threshold components unless explicitly authorized via `metadata['allow_feature_loss']=True`. |
 | **Optimization Core** | **BLF & SA Operational** | BLF baseline and Simulated Annealing with Part-in-Part cavity nesting verified across fixed seeds. |
 | **Benchmark Status** | **Locked & Proven** | Dedicated reproducibility test (`test_benchmark_reproducibility.py`) permanently locks the 17-part, 5-seed orthogonal baseline at **1,946.00 mm** (-17.19% compaction, 3 discrete sheets). |
 | **CAD / DXF Ingestion** | **16-Case Test Corpus** | Evaluated against 16 synthetic edge cases in `SYNTHETIC_DXF_TEST_MATRIX.md` (splines, bulges, open contours, nested holes, narrow slots, large coordinates, R12/R2018). |
@@ -53,13 +53,25 @@
 - Added `validate_exported_dxf` auditing reopenability, structural integrity, polyline closure, and net area conservation within $\Delta \le 0.05\text{ mm}^2$.
 - Added 11 automated regression tests (`test_stage_e_integrity.py`), bringing total suite to 77 passed tests.
 
-### Stage F: Reliability Hardening & Real-World Validation Preparation (Current Master)
+### Stage F: Reliability Hardening & Real-World Validation Preparation
 - **Fail-Closed Geometry Validation:** Resolved fail-open behavior in `compute_boundary_deviation()`. Replaced generic fallback to 0.0 with `GeometryComparisonError` and `float('inf')`. Guarded `Part.__init__` so comparison failures cannot accidentally authorize damaged geometry.
 - **Locked Benchmark Configuration:** Identified and documented historical iteration typo (ESICUP used 25 iterations; Industrial used 20 iterations). Locked complete 17-part, 5-seed configuration in `test_benchmark_reproducibility.py` (mean $1,946.00\text{ mm}$, $17.19\%$ compaction, 3 sheets).
-- **16-Case Synthetic DXF Test Corpus:** Built `data/dxf_test_corpus/` containing synthetic edge cases and documented all results in `SYNTHETIC_DXF_TEST_MATRIX.md`. Added 16 tests in `test_dxf_corpus.py`. Real-world drawings are governed by `REAL_WORLD_DXF_INTAKE_PROCESS.md`.
+- **16-Case Synthetic DXF Test Corpus:** Built `data/dxf_test_corpus/` containing synthetic edge cases and documented all results in `SYNTHETIC_DXF_TEST_MATRIX.md`. Added 16 tests in `test_dxf_corpus.py`.
 - **CAM Interoperability Protocol:** Produced 6 validated export DXF layouts in `data/cam_export_samples/` and defined step-by-step SOP in `CAM_INTEROPERABILITY_TEST_PROTOCOL.md`.
 - **Fabricator Validation Package:** Created plain-language shop guide and structured evaluation survey in `FABRICATOR_FEEDBACK_TEMPLATE.md` with complete truthfulness disclosures.
-- **Total Test Count:** **109 / 109 tests passing** across 11 test suites.
+- **Total Test Count:** 109 / 109 tests passing.
+
+### Stage G: Runtime Type Validation, CI Workflow & Intake Process
+- **Geometry Runtime Type Validation:** Enforced strict runtime type checking in `compute_boundary_deviation()`, rejecting `Point` and `LineString` inputs.
+- **Continuous Integration (CI):** Implemented GitHub Actions CI workflow (`.github/workflows/ci.yml`) on Python 3.12 running the full test and benchmark suite.
+- **Real-World Intake Framework:** Established 10-step customer drawing intake SOP (`REAL_WORLD_DXF_INTAKE_PROCESS.md`) and unpopulated living case matrix (`REAL_WORLD_DXF_TEST_MATRIX.md`).
+- **Ingestion Override Tracking:** Surfaced active CAD safety overrides in validation reports and Streamlit dashboard.
+
+### Stage G.1: GeometryCollection Integrity Closure & Strict Component Validation (Current Baseline)
+- **GeometryCollection Integrity Closure:** Enforced fail-closed rejection in `compute_boundary_deviation()` for repaired `GeometryCollection`s containing non-polygonal (`LineString`, `Point`) or empty components. Pure polygonal collections are safely flattened into `MultiPolygon` and measured.
+- **Strict Component Rejection in `Part.__init__`:** Prohibited silent omission of non-polygonal elements or sub-threshold polygons (area $\le 10^{-4}\text{ mm}^2$). Explicitly requires `metadata['allow_feature_loss']=True` to authorize omission of non-nestable components.
+- **Multi-Loop ESICUP Parsing:** Enabled closed sub-loop parsing in `parse_esicup_txt` to construct genuine `MultiPolygon` parts directly from vertex coordinates without artificial self-intersections.
+- **Total Test Count:** **121 / 121 tests passing** across 12 test suites.
 
 ---
 
@@ -70,5 +82,3 @@
    - Verify automated micro-tab injection to prevent child parts from dropping into table slats.
 2. **Fabricator Field Trials (P1):**
    - Collect empirical feedback using `FABRICATOR_FEEDBACK_TEMPLATE.md` from at least 2 fabrication workshops.
-3. **Continuous Integration (CI) Setup (P2):**
-   - Add a GitHub Actions workflow (`.github/workflows/ci.yml`) to automatically run the 109 tests and benchmark checks on every pull request.
