@@ -28,11 +28,11 @@ def count_geometry_holes(geom: Union[Polygon, MultiPolygon, GeometryCollection])
         return len(geom.interiors)
     return 0
 
-def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon], 
+def compute_boundary_deviation(poly_orig: Union[Polygon, MultiPolygon],
                                poly_repaired: Union[Polygon, MultiPolygon, GeometryCollection],
                                fail_closed: bool = True) -> float:
     """
-    Computes maximum boundary displacement (Hausdorff distance) between 
+    Computes maximum boundary displacement (Hausdorff distance) between
     the original input boundary and the repaired 2D boundary.
     Fails closed: If comparison fails, raises GeometryComparisonError (or returns float('inf')
     if fail_closed=False). Never returns 0.0 on comparison error.
@@ -174,21 +174,21 @@ class Part:
     """Represents a component/part to be nested. Supports both Polygon and MultiPolygon."""
     def __init__(self, polygon: Union[Polygon, MultiPolygon], part_id: str, quantity: int = 1, metadata: Optional[Dict[str, Any]] = None):
         self.metadata = metadata or {}
-        
+
         is_valid_orig = polygon.is_valid
         num_input_components = len(polygon.geoms) if isinstance(polygon, MultiPolygon) else 1
         num_input_holes = count_geometry_holes(polygon)
         input_area = float(polygon.area)
-        
+
         if not is_valid_orig:
             repaired = make_valid(polygon)
             num_repaired_components = len(repaired.geoms) if isinstance(repaired, (MultiPolygon, GeometryCollection)) else 1
             num_repaired_holes = count_geometry_holes(repaired)
             repaired_area = float(repaired.area)
-            
+
             area_delta = abs(repaired_area - input_area)
             area_delta_pct = (area_delta / input_area) if input_area > 1e-6 else 0.0
-            
+
             comparison_failed = False
             notes = []
             try:
@@ -197,23 +197,23 @@ class Part:
                 hausdorff_dist = float('inf')
                 comparison_failed = True
                 notes.append(f"boundary deviation comparison error: {str(e)}")
-            
+
             topology_altered = comparison_failed
             feature_loss_detected = comparison_failed
-            
+
             if num_repaired_components != num_input_components:
                 topology_altered = True
                 notes.append(f"components: {num_input_components} -> {num_repaired_components}")
-                
+
             if num_repaired_holes != num_input_holes:
                 topology_altered = True
                 notes.append(f"holes: {num_input_holes} -> {num_repaired_holes}")
-                
+
             max_area_delta_pct = float(self.metadata.get("max_area_delta_pct", 0.01))
             if input_area > 1e-4 and area_delta_pct > max_area_delta_pct:
                 topology_altered = True
                 notes.append(f"area: {input_area:.2f} -> {repaired_area:.2f} (delta {area_delta_pct*100.0:.2f}%)")
-                
+
             # Check for non-polygonal or sub-threshold components in repair output
             non_polys = []
             tiny_polys = []
@@ -238,17 +238,17 @@ class Part:
                     topology_altered = True
                     feature_loss_detected = True
                     notes.append("repair produced sub-threshold polygonal component (area <= 1e-4)")
-                
+
             max_dev_threshold = float(self.metadata.get("max_boundary_deviation", 0.5))
             if hausdorff_dist > max_dev_threshold:
                 feature_loss_detected = True
                 if not comparison_failed:
                     notes.append(f"boundary deviation {hausdorff_dist:.3f}mm exceeds tolerance {max_dev_threshold:.3f}mm")
-                
+
             repair_authorized = bool(self.metadata.get("allow_repaired_topology", False))
             allow_feature_loss = bool(self.metadata.get("allow_feature_loss", False))
             allow_unverifiable = bool(self.metadata.get("allow_unverifiable_geometry", False))
-            
+
             active_overrides = [
                 k for k in ["allow_repaired_topology", "allow_unverifiable_geometry", "allow_feature_loss"]
                 if bool(self.metadata.get(k, False))
@@ -271,7 +271,7 @@ class Part:
                 "active_overrides": active_overrides,
                 "notes": notes
             }
-            
+
             if comparison_failed:
                 # Fails closed on comparison failure: cannot verify feature preservation
                 if not allow_unverifiable:
@@ -280,7 +280,7 @@ class Part:
                         f"Geometry validation failed for part '{part_id}': Boundary deviation comparison failed ({diag}). "
                         f"Cannot verify feature preservation; failing closed to prevent authorizing damaged geometry."
                     )
-            
+
             if (topology_altered or not is_valid_orig) and not repair_authorized:
                 diag = "; ".join(notes) if notes else "Input contour is self-intersecting"
                 raise CADTopologyError(
@@ -288,7 +288,7 @@ class Part:
                     f"and repair via make_valid materially altered topology ({diag}). "
                     f"Geometry must be corrected in CAD or explicitly authorized via metadata['allow_repaired_topology']=True."
                 )
-                
+
             if feature_loss_detected and not allow_feature_loss:
                 dev_str = f"{hausdorff_dist:.3f} mm" if not math.isinf(hausdorff_dist) else "infinite/uncomputed"
                 raise CADTopologyError(
@@ -296,7 +296,7 @@ class Part:
                     f"(Hausdorff distance {dev_str} exceeds tolerance {max_dev_threshold:.3f} mm). "
                     f"Automated repair collapsed physical features. Requires explicit metadata['allow_feature_loss']=True."
                 )
-                
+
             # If authorized, extract nestable polygon components
             if isinstance(repaired, GeometryCollection):
                 if (non_polys or tiny_polys) and not allow_feature_loss:
@@ -370,7 +370,7 @@ class Part:
                 "active_overrides": active_overrides,
                 "notes": []
             }
-                
+
         # Preserve all valid components (whether Polygon or MultiPolygon)
         self.polygon = polygon
         self.part_id = part_id
@@ -379,10 +379,10 @@ class Part:
         self.minx, self.miny, self.maxx, self.maxy = polygon.bounds
         self.width = self.maxx - self.minx
         self.height = self.maxy - self.miny
-        
+
         # Normalize polygon to origin (0, 0)
         self.base_polygon = affinity.translate(polygon, xoff=-self.minx, yoff=-self.miny)
-        
+
     def get_rotated(self, angle_degrees: float) -> Union[Polygon, MultiPolygon]:
         """Returns the base polygon rotated by angle_degrees and normalized to origin."""
         rotated = affinity.rotate(self.base_polygon, angle_degrees, origin='centroid')
@@ -399,17 +399,17 @@ class Sheet:
         self.area = width * height
         self.placed_parts: List[Tuple[str, Polygon, float]] = [] # (part_id, placed_polygon, rotation)
         self.part_in_part_assignments: Dict[str, str] = {} # child_part_name -> parent_part_name
-        
+
     def can_contain(self, poly: Polygon, margin: float = 0.0) -> bool:
         """Checks if the sheet strictly contains the polygon within its boundaries with optional margin."""
         minx, miny, maxx, maxy = poly.bounds
-        return (minx >= margin - 1e-6 and miny >= margin - 1e-6 and 
+        return (minx >= margin - 1e-6 and miny >= margin - 1e-6 and
                 maxx <= self.width - margin + 1e-6 and maxy <= self.height - margin + 1e-6)
-        
+
     def get_utilized_area(self) -> float:
         """Sum of areas of parts placed on this sheet."""
         return sum(poly.area for _, poly, _ in self.placed_parts)
-        
+
     def get_utilization_pct(self) -> float:
         """Returns material utilization percentage."""
         if self.area <= 0:
@@ -430,8 +430,26 @@ class Sheet:
 
     def get_remnant_geometry(self) -> Dict[str, Any]:
         """
-        Calculates the intact rectangular virgin plate remaining on the right side of the sheet.
-        Prime remnant threshold: remnant width >= 100mm.
+        Calculates the intact virgin margin remaining on the right side of an individual sheet.
+        Calculation:
+            remnant_width = max(0.0, sheet_width - max_x)
+            remnant_height = sheet_height
+            estimated_geometric_remnant = (remnant_width >= 100.0)
+
+        Standard Terminology & Manufacturing Boundary:
+            - 'estimated_geometric_remnant' is a geometric threshold indicator only (remnant width >= 100mm).
+            - It checks only the virgin right-margin width against the 100mm linear threshold.
+            - It does not prove contiguity, physical separation, rectangular shape, dimensional usability,
+              or reusable inventory.
+            - It does not establish material savings or financial savings.
+            - A physical prime reusable plate requires secondary operations: physical CAM severing,
+              deburring, squaring, inspection, dimensional verification, and secondary inventory qualification.
+
+        Boolean Scope:
+            - When called on a Sheet instance, this flag applies strictly to this individual sheet.
+            - In 'per_sheet_metrics', it is evaluated independently for each individual sheet.
+            - In 'final_sheet_remnant', it applies exclusively to the final sheet of a nesting layout.
+            - It must not be interpreted as a batch-wide or overall job remnant result.
         """
         max_x = self.get_max_x()
         rem_w = max(0.0, self.width - max_x)
@@ -446,11 +464,11 @@ class Sheet:
             "remnant_height": round(rem_h, 2),
             "remnant_area": round(rem_area, 2),
             "remnant_pct": round(rem_pct, 2),
-            "is_prime_remnant": rem_w >= 100.0
+            "estimated_geometric_remnant": rem_w >= 100.0
         }
 
-def check_collision(candidate_poly: Polygon, 
-                    placed_polygons: List[Polygon], 
+def check_collision(candidate_poly: Polygon,
+                    placed_polygons: List[Polygon],
                     clearance: float = 0.0) -> bool:
     """
     Checks if candidate_poly intersects with any already placed polygon.
@@ -460,15 +478,15 @@ def check_collision(candidate_poly: Polygon,
         buffered_candidate = candidate_poly.buffer(clearance, join_style='round')
     else:
         buffered_candidate = candidate_poly
-        
+
     c_minx, c_miny, c_maxx, c_maxy = buffered_candidate.bounds
-    
+
     for placed in placed_polygons:
         # Fast bounding box rejection
         p_minx, p_miny, p_maxx, p_maxy = placed.bounds
         if c_maxx < p_minx or c_minx > p_maxx or c_maxy < p_miny or c_miny > p_maxy:
             continue
-            
+
         # Exact irregular polygon intersection
         if buffered_candidate.intersects(placed):
             intersection = buffered_candidate.intersection(placed)
@@ -489,17 +507,17 @@ def compute_hole_feasible_regions(poly: Union[Polygon, MultiPolygon], clearance:
     for sub in sub_polys:
         if not hasattr(sub, 'interiors') or not sub.interiors:
             continue
-            
+
         for interior in sub.interiors:
             hole_poly = Polygon(interior.coords)
             if not hole_poly.is_valid:
                 hole_poly = make_valid(hole_poly)
-                
+
             if clearance > 0.0:
                 h_feas = hole_poly.buffer(-clearance, join_style='mitre')
             else:
                 h_feas = hole_poly
-                
+
             if not h_feas.is_empty and h_feas.area > 1e-4:
                 if isinstance(h_feas, MultiPolygon):
                     for g in h_feas.geoms:
@@ -507,7 +525,7 @@ def compute_hole_feasible_regions(poly: Union[Polygon, MultiPolygon], clearance:
                             feasible_regions.append(g)
                 elif h_feas.is_valid:
                     feasible_regions.append(h_feas)
-                    
+
     return feasible_regions
 
 def get_allowed_rotations(part: Optional[Part] = None,
@@ -515,12 +533,12 @@ def get_allowed_rotations(part: Optional[Part] = None,
                           grain_direction: Optional[str] = None) -> List[float]:
     """
     Returns allowed rotation angles (degrees) based on rotation_mode and grain restrictions.
-    
+
     rotation_mode:
       - 'orthogonal' (default): [0.0, 90.0, 180.0, 270.0]
       - 'adaptive': 15-degree coarse exploration [0.0, 15.0, ..., 345.0] (24 angles)
       - 'none': [0.0]
-      
+
     grain_direction / part.metadata grain:
       - 'horizontal': restricted strictly to [0.0, 180.0]
       - 'vertical': restricted strictly to [90.0, 270.0]
@@ -531,12 +549,12 @@ def get_allowed_rotations(part: Optional[Part] = None,
         grain = part.metadata.get("grain_direction") or part.metadata.get("grain_constraint")
     if grain is None:
         grain = grain_direction
-        
+
     if grain == "horizontal":
         return [0.0, 180.0]
     elif grain == "vertical":
         return [90.0, 270.0]
-        
+
     if rotation_mode == "adaptive":
         return [float(a) for a in range(0, 360, 15)]
     elif rotation_mode == "none":

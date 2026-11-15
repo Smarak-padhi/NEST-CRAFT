@@ -41,38 +41,38 @@ EXPECTED_OUTPUTS = {
         "total_linear_length_consumed": 2350.00,
         "utilization_pct": 46.67,
         "remnant_width": 50.00,
-        "is_prime_remnant": False
+        "estimated_geometric_remnant": False
     },
     "sa_per_seed": {
         42: {
             "sheets_used": 3,
             "total_linear_length_consumed": 1966.0,
             "remnant_width": 434.0,
-            "is_prime_remnant": True
+            "estimated_geometric_remnant": True
         },
         101: {
             "sheets_used": 3,
             "total_linear_length_consumed": 2110.0,
             "remnant_width": 290.0,
-            "is_prime_remnant": True
+            "estimated_geometric_remnant": True
         },
         202: {
             "sheets_used": 3,
             "total_linear_length_consumed": 1742.0,
             "remnant_width": 658.0,
-            "is_prime_remnant": True
+            "estimated_geometric_remnant": True
         },
         303: {
             "sheets_used": 3,
             "total_linear_length_consumed": 1986.0,
             "remnant_width": 414.0,
-            "is_prime_remnant": True
+            "estimated_geometric_remnant": True
         },
         404: {
             "sheets_used": 3,
             "total_linear_length_consumed": 1926.0,
             "remnant_width": 474.0,
-            "is_prime_remnant": True
+            "estimated_geometric_remnant": True
         }
     },
     "sa_5_seed_mean_linear": 1946.00,
@@ -134,7 +134,7 @@ def test_blf_baseline_reproducibility(loaded_industrial_batch):
 
     rem = stats["final_sheet_remnant"]
     assert rem["remnant_width"] == exp["remnant_width"]
-    assert rem["is_prime_remnant"] == exp["is_prime_remnant"]
+    assert rem["estimated_geometric_remnant"] == exp["estimated_geometric_remnant"]
 
 @pytest.mark.parametrize("seed", HISTORICAL_CONFIG["seeds"])
 def test_sa_per_seed_reproducibility(loaded_industrial_batch, seed):
@@ -160,7 +160,7 @@ def test_sa_per_seed_reproducibility(loaded_industrial_batch, seed):
 
     rem = stats["final_sheet_remnant"]
     assert rem["remnant_width"] == exp["remnant_width"], f"Seed {seed} remnant width mismatch"
-    assert rem["is_prime_remnant"] == exp["is_prime_remnant"]
+    assert rem["estimated_geometric_remnant"] == exp["estimated_geometric_remnant"]
 
 def test_sa_five_seed_mean_reproducibility(loaded_industrial_batch):
     """Verify that the 5-seed mean linear extent reproduces 1,946.00 mm and 17.19% compaction."""

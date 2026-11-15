@@ -20,7 +20,7 @@
       "scrap_pct": 71.5,
       "total_sheet_area": 5600.0,
       "utilized_area": 1596.0,
-      "runtime_seconds": 3.91,
+      "runtime_seconds": 7.928,
       "total_linear_length_consumed": 77.75,
       "total_linear_stock_available": 80.0,
       "continuous_strip_utilization_pct": 29.32,
@@ -32,7 +32,7 @@
         "remnant_height": 70.0,
         "remnant_area": 157.5,
         "remnant_pct": 5.62,
-        "is_prime_remnant": false
+        "estimated_geometric_remnant": false
       },
       "per_sheet_metrics": [
         {
@@ -47,7 +47,7 @@
           "remnant_height": 70.0,
           "remnant_area": 17.5,
           "remnant_pct": 0.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         {
           "sheet_id": 2,
@@ -61,7 +61,7 @@
           "remnant_height": 70.0,
           "remnant_area": 157.5,
           "remnant_pct": 5.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         }
       ]
     },
@@ -81,10 +81,10 @@
           "remnant_height": 70.0,
           "remnant_area": 297.5,
           "remnant_pct": 10.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "linear_saved_mm": 2.0,
-        "runtime_seconds": 29.131,
+        "runtime_seconds": 36.158,
         "utilization_gain_pct": 0.0
       },
       {
@@ -102,10 +102,10 @@
           "remnant_height": 70.0,
           "remnant_area": 367.5,
           "remnant_pct": 13.12,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "linear_saved_mm": 3.0,
-        "runtime_seconds": 30.437,
+        "runtime_seconds": 32.271,
         "utilization_gain_pct": 0.0
       },
       {
@@ -123,10 +123,10 @@
           "remnant_height": 70.0,
           "remnant_area": 262.5,
           "remnant_pct": 9.38,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "linear_saved_mm": 1.5,
-        "runtime_seconds": 28.705,
+        "runtime_seconds": 29.83,
         "utilization_gain_pct": 0.0
       },
       {
@@ -144,10 +144,10 @@
           "remnant_height": 70.0,
           "remnant_area": 332.5,
           "remnant_pct": 11.88,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "linear_saved_mm": 2.5,
-        "runtime_seconds": 30.876,
+        "runtime_seconds": 32.117,
         "utilization_gain_pct": 0.0
       },
       {
@@ -165,10 +165,10 @@
           "remnant_height": 70.0,
           "remnant_area": 437.5,
           "remnant_pct": 15.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "linear_saved_mm": 4.0,
-        "runtime_seconds": 29.533,
+        "runtime_seconds": 30.709,
         "utilization_gain_pct": 0.0
       }
     ],
@@ -179,7 +179,7 @@
     "sa_mean_linear_consumed_mm": 75.15,
     "sa_mean_linear_saved_mm": 2.6,
     "sa_mean_strip_utilization": 30.34,
-    "sa_mean_runtime": 29.74
+    "sa_mean_runtime": 32.22
   },
   "industrial_dxf": {
     "dataset": "Industrial DXF Mechanical Fabrication Batch",
@@ -202,7 +202,7 @@
       "scrap_pct": 53.33,
       "total_sheet_area": 1200000.0,
       "utilized_area": 560000.0,
-      "runtime_seconds": 0.507,
+      "runtime_seconds": 0.558,
       "total_linear_length_consumed": 2350.0,
       "total_linear_stock_available": 2400.0,
       "continuous_strip_utilization_pct": 47.66,
@@ -214,7 +214,7 @@
         "remnant_height": 500.0,
         "remnant_area": 25000.0,
         "remnant_pct": 6.25,
-        "is_prime_remnant": false
+        "estimated_geometric_remnant": false
       },
       "per_sheet_metrics": [
         {
@@ -229,7 +229,7 @@
           "remnant_height": 500.0,
           "remnant_area": 20000.0,
           "remnant_pct": 5.0,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         {
           "sheet_id": 2,
@@ -243,7 +243,7 @@
           "remnant_height": 500.0,
           "remnant_area": 33000.0,
           "remnant_pct": 8.25,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         {
           "sheet_id": 3,
@@ -257,7 +257,7 @@
           "remnant_height": 500.0,
           "remnant_area": 25000.0,
           "remnant_pct": 6.25,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         }
       ]
     },
@@ -277,10 +277,10 @@
           "remnant_height": 500.0,
           "remnant_area": 217000.0,
           "remnant_pct": 54.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "linear_saved_mm": 384.0,
-        "runtime_seconds": 2.92,
+        "runtime_seconds": 3.121,
         "utilization_gain_pct": 0.0
       },
       {
@@ -298,10 +298,10 @@
           "remnant_height": 500.0,
           "remnant_area": 145000.0,
           "remnant_pct": 36.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "linear_saved_mm": 240.0,
-        "runtime_seconds": 3.066,
+        "runtime_seconds": 3.142,
         "utilization_gain_pct": 0.0
       },
       {
@@ -319,10 +319,10 @@
           "remnant_height": 500.0,
           "remnant_area": 329000.0,
           "remnant_pct": 82.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "linear_saved_mm": 608.0,
-        "runtime_seconds": 2.648,
+        "runtime_seconds": 2.766,
         "utilization_gain_pct": 0.0
       },
       {
@@ -340,10 +340,10 @@
           "remnant_height": 500.0,
           "remnant_area": 207000.0,
           "remnant_pct": 51.75,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "linear_saved_mm": 364.0,
-        "runtime_seconds": 3.501,
+        "runtime_seconds": 3.133,
         "utilization_gain_pct": 0.0
       },
       {
@@ -361,10 +361,10 @@
           "remnant_height": 500.0,
           "remnant_area": 237000.0,
           "remnant_pct": 59.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "linear_saved_mm": 424.0,
-        "runtime_seconds": 2.802,
+        "runtime_seconds": 3.074,
         "utilization_gain_pct": 0.0
       }
     ],
@@ -375,6 +375,6 @@
     "sa_mean_linear_consumed_mm": 1946.0,
     "sa_mean_linear_saved_mm": 404.0,
     "sa_mean_strip_utilization": 57.78,
-    "sa_mean_runtime": 2.99
+    "sa_mean_runtime": 3.05
   }
 }

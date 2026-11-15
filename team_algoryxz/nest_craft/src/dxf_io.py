@@ -49,66 +49,157 @@ IGNORE_LAYERS = {
 
 def parse_esicup_txt(file_path: str, allow_repaired_topology: bool = False) -> Tuple[List[Part], Dict[str, Any]]:
     """
-    Parses classic ESICUP format (e.g. shapes.txt, swim.txt).
-    Format:
-    PIECE <id>
-    QUANTITY
-    <qty>
-    NUMBER OF VERTICES
-    <num_vertices>
-    VERTICES (X,Y)
-    x y
-    ...
+    Parses classic ESICUP format (e.g. shapes.txt, swim.txt) with strict fail-closed
+    validation and multi-loop contour support.
+
+    Format Specification:
+        PIECE <id>
+        QUANTITY
+        <qty>
+        NUMBER OF VERTICES
+        <num_vertices>
+        VERTICES (X,Y)
+        x1 y1
+        x2 y2
+        ...
+
+    Loop Closure & Legacy Backward Compatibility:
+        1. Single-Loop Contours (Legacy Standard):
+           Historical ESICUP benchmarks (e.g. shapes.txt, swim.txt) define single-contour
+           polygons with N distinct vertices where the final vertex does NOT repeat the
+           initial vertex (implicit closure). Alternatively, modern CAD inputs may provide
+           an explicitly closed single loop with N+1 vertices (where v_last == v_first).
+           Both explicitly closed and legacy unclosed single loops are accepted when exactly one loop
+           is present in the piece and all vertices are non-repeating and non-self-intersecting.
+        2. Multi-Loop Contours (Multipart & Cavity Holes):
+           When a piece contains multiple sub-loops (disjoint solids or interior holes),
+           EVERY sub-loop MUST be explicitly closed (v_last == v_first). An unclosed trailing
+           or intermediate sequence in a multi-loop piece is inherently ambiguous and is
+           strictly rejected with CADTopologyError under fail-closed enforcement.
+        3. Strict Coordinate Validation:
+           Declared 'NUMBER OF VERTICES' must match the exact count of parsed coordinate rows.
+           Rows with missing, extra, non-numeric, or non-finite values are rejected immediately.
     """
     parts = []
     metadata = {
-        "source": file_path, 
+        "source": file_path,
         "filename": os.path.basename(file_path),
         "is_valid": True,
         "errors": [],
         "warnings": []
     }
-    
+
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read().strip()
-        
+
     # Split by "PIECE"
     pieces = re.split(r'PIECE\s+\d+', content, flags=re.IGNORECASE)
     # The first split might be empty or preamble
     piece_blocks = [p.strip() for p in pieces if p.strip()]
-    
+
     for idx, block in enumerate(piece_blocks):
         lines = [line.strip() for line in block.split("\n") if line.strip()]
         qty = 1
-        num_vertices = 0
+        num_vertices = None
         coords = []
-        
+
         i = 0
         while i < len(lines):
             line = lines[i]
             if "QUANTITY" in line.upper():
                 i += 1
                 if i < len(lines):
-                    qty = int(lines[i])
+                    try:
+                        qty = int(lines[i])
+                        if qty <= 0:
+                            raise ValueError()
+                    except ValueError:
+                        metadata["is_valid"] = False
+                        err = (
+                            f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                            f"Invalid QUANTITY value '{lines[i]}'. Quantity must be a positive integer."
+                        )
+                        metadata["errors"].append(err)
+                        raise CADTopologyError(err)
             elif "NUMBER OF VERTICES" in line.upper():
                 i += 1
                 if i < len(lines):
-                    num_vertices = int(lines[i])
+                    try:
+                        num_vertices = int(lines[i])
+                        if num_vertices < 3:
+                            raise ValueError()
+                    except ValueError:
+                        metadata["is_valid"] = False
+                        err = (
+                            f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                            f"Invalid NUMBER OF VERTICES value '{lines[i]}'. "
+                            f"Piece has fewer than 3 vertices (vertex count must be an integer >= 3)."
+                        )
+                        metadata["errors"].append(err)
+                        raise CADTopologyError(err)
             elif "VERTICES" in line.upper():
                 i += 1
+                coord_row_idx = 0
                 while i < len(lines) and not any(kw in lines[i].upper() for kw in ["PIECE", "QUANTITY", "NUMBER"]):
-                    parts_coord = lines[i].split()
-                    if len(parts_coord) >= 2:
-                        try:
-                            x = float(parts_coord[0])
-                            y = float(parts_coord[1])
-                            coords.append((x, y))
-                        except ValueError:
-                            pass
+                    raw_coord_line = lines[i]
+                    parts_coord = raw_coord_line.split()
+                    coord_row_idx += 1
+
+                    if len(parts_coord) != 2:
+                        metadata["is_valid"] = False
+                        err = (
+                            f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                            f"Malformed coordinate row {coord_row_idx}: expected exactly 2 values (X, Y), "
+                            f"got {len(parts_coord)} ('{raw_coord_line}')."
+                        )
+                        metadata["errors"].append(err)
+                        raise CADTopologyError(err)
+
+                    try:
+                        x = float(parts_coord[0])
+                        y = float(parts_coord[1])
+                    except ValueError as e:
+                        metadata["is_valid"] = False
+                        err = (
+                            f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                            f"Malformed coordinate row {coord_row_idx}: cannot parse '{raw_coord_line}' as numeric coordinates."
+                        )
+                        metadata["errors"].append(err)
+                        raise CADTopologyError(err) from e
+
+                    if math.isnan(x) or math.isinf(x) or math.isnan(y) or math.isinf(y):
+                        metadata["is_valid"] = False
+                        err = (
+                            f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                            f"Non-finite coordinate value at row {coord_row_idx}: ('{raw_coord_line}')."
+                        )
+                        metadata["errors"].append(err)
+                        raise CADTopologyError(err)
+
+                    coords.append((x, y))
                     i += 1
                 continue
             i += 1
-            
+
+        if num_vertices is None:
+            metadata["is_valid"] = False
+            err = (
+                f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                "Missing 'NUMBER OF VERTICES' declaration."
+            )
+            metadata["errors"].append(err)
+            raise CADTopologyError(err)
+
+        if len(coords) != num_vertices:
+            metadata["is_valid"] = False
+            err = (
+                f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                f"Vertex count mismatch: 'NUMBER OF VERTICES' declared {num_vertices}, "
+                f"but parsed {len(coords)} coordinate rows."
+            )
+            metadata["errors"].append(err)
+            raise CADTopologyError(err)
+
         if len(coords) < 3:
             metadata["is_valid"] = False
             err = f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}' has fewer than 3 vertices ({len(coords)} found)."
@@ -123,10 +214,40 @@ def parse_esicup_txt(file_path: str, allow_repaired_topology: bool = False) -> T
             if len(curr_loop) >= 4 and pt == curr_loop[0]:
                 sub_loops.append(curr_loop)
                 curr_loop = []
+            elif pt in curr_loop[:-1]:
+                match_idx = curr_loop[:-1].index(pt)
+                metadata["is_valid"] = False
+                if match_idx == 0:
+                    err = (
+                        f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                        f"Sub-loop is degenerate with fewer than 3 unique vertices (closed after {len(curr_loop)} vertices)."
+                    )
+                else:
+                    err = (
+                        f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                        f"Ambiguous or malformed multi-loop contour: internal loop closure at vertex {len(curr_loop)} "
+                        f"matches vertex {match_idx+1}, leaving preceding vertices unclosed."
+                    )
+                metadata["errors"].append(err)
+                raise CADTopologyError(err)
 
         if curr_loop:
             if not sub_loops:
                 # Single loop without explicit closing vertex (standard ESICUP like shapes.txt)
+                # Legacy single-loop exception:
+                # Historical ESICUP benchmarks (shapes.txt, swim.txt) specify single-contour
+                # polygons as N coordinate rows without repeating the starting vertex.
+                # In this case (and only when no preceding sub-loops were found), the sequence
+                # is accepted and implicitly closed, provided all vertices are unique.
+                unique_pts = list(dict.fromkeys(curr_loop))
+                if len(unique_pts) != len(curr_loop):
+                    metadata["is_valid"] = False
+                    err = (
+                        f"ESICUP piece 'piece_{idx+1}' in '{os.path.basename(file_path)}': "
+                        "Unclosed single loop contains duplicate vertices or self-intersecting points."
+                    )
+                    metadata["errors"].append(err)
+                    raise CADTopologyError(err)
                 sub_loops = [curr_loop]
             else:
                 # An unclosed sequence following one or more closed sub-loops
@@ -226,8 +347,8 @@ def parse_esicup_txt(file_path: str, allow_repaired_topology: bool = False) -> T
             for i_s, depth in depths.items():
                 if depth % 2 == 0:
                     child_holes = [
-                        sorted_loops[h_idx].exterior.coords 
-                        for h_idx, h_depth in depths.items() 
+                        sorted_loops[h_idx].exterior.coords
+                        for h_idx, h_depth in depths.items()
                         if h_depth == depth + 1 and parents[h_idx] == i_s
                     ]
                     solid_poly = Polygon(sorted_loops[i_s].exterior.coords, child_holes)
@@ -249,7 +370,7 @@ def parse_esicup_txt(file_path: str, allow_repaired_topology: bool = False) -> T
             "allow_repaired_topology": allow_repaired_topology
         }
         parts.append(Part(poly, part_id=f"piece_{idx+1}", quantity=qty, metadata=meta))
-            
+
     metadata["total_pieces_extracted"] = len(parts)
     metadata["total_quantity"] = sum(p.quantity for p in parts)
     return parts, metadata
@@ -262,18 +383,18 @@ def parse_esicup_xml(file_path: str, allow_repaired_topology: bool = False) -> T
         "errors": [],
         "warnings": []
     }
-    
+
     tree = ET.parse(file_path)
     root = tree.getroot()
-    
+
     # Strip namespace if present
     ns = ""
     if "}" in root.tag:
         ns = root.tag.split("}")[0] + "}"
-        
+
     metadata["name"] = root.findtext(f"{ns}name", default="Unknown")
     metadata["author"] = root.findtext(f"{ns}author", default="ESICUP")
-    
+
     # Parse polygons pool
     polygons_dict = {}
     polygons_elem = root.find(f"{ns}polygons")
@@ -290,7 +411,7 @@ def parse_esicup_xml(file_path: str, allow_repaired_topology: bool = False) -> T
             if len(coords) >= 3:
                 poly = Polygon(coords)
                 polygons_dict[poly_id] = poly
-                
+
     # Parse problem lot
     lot_elem = root.find(f"{ns}problem/{ns}lot")
     if lot_elem is not None:
@@ -308,7 +429,7 @@ def parse_esicup_xml(file_path: str, allow_repaired_topology: bool = False) -> T
                         "allow_repaired_topology": allow_repaired_topology
                     }
                     parts.append(Part(raw_poly, part_id=piece_id, quantity=qty, metadata=meta))
-                    
+
     metadata["total_pieces_extracted"] = len(parts)
     metadata["total_quantity"] = sum(p.quantity for p in parts)
     return parts, metadata
@@ -325,7 +446,7 @@ def validate_and_parse_dxf(file_path: str,
     4. Topologically detects concentric interior cutouts and assigns them as polygon holes.
     5. Flags unsupported 3D entities and unclosed line segments with explicit error/warning messages.
     6. Tracks active CAD safety overrides and records them prominently in validation reports.
-    
+
     Returns:
         (parts, validation_report)
     """
@@ -352,26 +473,26 @@ def validate_and_parse_dxf(file_path: str,
         "warnings": [],
         "errors": []
     }
-    
+
     if active_overrides:
         for ov in active_overrides:
             report["warnings"].append(
                 f"ACTIVE CAD OVERRIDE: '{ov}=True' was explicitly authorized for '{os.path.basename(file_path)}'. "
                 "Automated repair or tolerance relaxation is active and may modify CAD boundary definitions."
             )
-    
+
     if not os.path.exists(file_path):
         report["is_valid"] = False
         report["errors"].append(f"File not found: {file_path}")
         return [], report
-        
+
     try:
         doc = ezdxf.readfile(file_path)
     except Exception as e:
         report["is_valid"] = False
         report["errors"].append(f"Failed to read DXF file '{os.path.basename(file_path)}': {str(e)}")
         return [], report
-        
+
     try:
         msp = doc.modelspace()
     except Exception as e:
@@ -382,7 +503,7 @@ def validate_and_parse_dxf(file_path: str,
     # Gather entities, exploding INSERT block references if present
     raw_entities = list(msp)
     processed_entities = []
-    
+
     for entity in raw_entities:
         dxftype = entity.dxftype()
         if dxftype == 'INSERT':
@@ -393,42 +514,42 @@ def validate_and_parse_dxf(file_path: str,
                 report["warnings"].append(f"Could not explode block reference '{entity.dxf.name}': {str(e)}")
         else:
             processed_entities.append(entity)
-            
+
     report["total_entities_inspected"] = len(processed_entities)
-    
+
     closed_polys: List[Polygon] = []
     line_strings: List[LineString] = []
-    
+
     for entity in processed_entities:
         dxftype = entity.dxftype()
         layer_name = entity.dxf.layer.upper() if hasattr(entity.dxf, 'layer') else ""
         if layer_name in IGNORE_LAYERS:
             continue
-            
+
         report["entity_counts"][dxftype] = report["entity_counts"].get(dxftype, 0) + 1
-        
+
         if dxftype in UNSUPPORTED_3D_ENTITY_TYPES:
             report["unsupported_3d_entities"].append(dxftype)
             report["warnings"].append(
                 f"Unsupported entity type '{dxftype}' ignored. 2D nesting requires planar profiles."
             )
             continue
-            
+
         if dxftype in ANNOTATION_ENTITY_TYPES:
             report["annotation_entities"] += 1
             continue
-            
+
         if dxftype in SUPPORTED_2D_CONTOUR_TYPES:
             report["supported_contour_entities"] += 1
             try:
                 p = path.make_path(entity)
                 pts = [(v.x, v.y) for v in p.flattening(distance=0.1)]
-                
+
                 # Check if path is marked closed or is geometrically closed
                 is_closed_geom = False
                 if len(pts) >= 4 and math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1]) < 1e-3:
                     is_closed_geom = True
-                    
+
                 if (p.is_closed or is_closed_geom) and len(pts) >= 3:
                     poly = Polygon(pts)
                     if not poly.is_valid:
@@ -450,14 +571,14 @@ def validate_and_parse_dxf(file_path: str,
                 report["warnings"].append(f"Failed to tessellate entity '{dxftype}': {str(e)}")
         else:
             report["warnings"].append(f"Unrecognized entity type '{dxftype}' skipped.")
-            
+
     # Stitch open LINE and ARC entities into closed loops using polygonize
     if line_strings:
         try:
             snapped_lines = [set_precision(l, grid_size=0.001) for l in line_strings]
             merged_network = unary_union(snapped_lines)
             stitched_polys = list(polygonize(merged_network))
-            
+
             for poly in stitched_polys:
                 if not poly.is_valid:
                     poly = make_valid(poly)
@@ -465,7 +586,7 @@ def validate_and_parse_dxf(file_path: str,
                     closed_polys.extend([sub for sub in poly.geoms if sub.area > 1e-3])
                 elif poly.area > 1e-3:
                     closed_polys.append(poly)
-                    
+
             # Check for dangling segments that did not participate in any closed polygon
             if not stitched_polys:
                 report["unclosed_segments_count"] = len(line_strings)
@@ -486,7 +607,7 @@ def validate_and_parse_dxf(file_path: str,
                     )
         except Exception as e:
             report["warnings"].append(f"Open contour network stitching failed: {str(e)}")
-            
+
     # Filter valid non-degenerate polygons
     valid_polys = []
     for poly in closed_polys:
@@ -505,7 +626,7 @@ def validate_and_parse_dxf(file_path: str,
                     valid_polys.append(sub)
         elif poly.area > 1e-3:
             valid_polys.append(poly)
-            
+
     if not valid_polys:
         report["is_valid"] = False
         report["errors"].append(
@@ -517,7 +638,7 @@ def validate_and_parse_dxf(file_path: str,
     # Topological containment tree for hole and island extraction:
     # Sort polygons descending by area.
     valid_polys.sort(key=lambda p: p.area, reverse=True)
-    
+
     # Compute immediate parent for each polygon (the smallest containing polygon)
     parents: Dict[int, Optional[int]] = {}
     for i, p_child in enumerate(valid_polys):
@@ -529,7 +650,7 @@ def validate_and_parse_dxf(file_path: str,
                     min_parent_area = p_parent.area
                     parent_idx = j
         parents[i] = parent_idx
-        
+
     # Compute nesting depth of each polygon
     depths: Dict[int, int] = {}
     for i in range(len(valid_polys)):
@@ -539,23 +660,23 @@ def validate_and_parse_dxf(file_path: str,
             d += 1
             curr = parents[curr]
         depths[i] = d
-        
+
     # Group immediate children by parent
     children: Dict[int, List[int]] = {i: [] for i in range(len(valid_polys))}
     for child_idx, parent_idx in parents.items():
         if parent_idx is not None:
             children[parent_idx].append(child_idx)
-            
+
     # Solid contours are at even depths (0 = outer boundary, 2 = island in hole, etc.)
     # Their immediate children (at depth d + 1) are their interior holes.
     parts: List[Part] = []
     total_holes = 0
-    
+
     for i, outer_poly in enumerate(valid_polys):
         if depths[i] % 2 == 0:
             immediate_hole_indices = children[i]
             candidate_holes = [valid_polys[h_idx] for h_idx in immediate_hole_indices]
-            
+
             hole_rings = []
             if candidate_holes:
                 try:
@@ -568,7 +689,7 @@ def validate_and_parse_dxf(file_path: str,
                         hole_rings = [h.exterior.coords for h in candidate_holes]
                 except Exception:
                     hole_rings = [h.exterior.coords for h in candidate_holes]
-                    
+
             part_poly = Polygon(shell=outer_poly.exterior.coords, holes=hole_rings)
             if not part_poly.is_valid:
                 part_poly = make_valid(part_poly)
@@ -584,13 +705,13 @@ def validate_and_parse_dxf(file_path: str,
                     part_poly = flat[0]
                 elif len(flat) > 1:
                     part_poly = MultiPolygon(flat)
-                    
+
             if isinstance(part_poly, (Polygon, MultiPolygon)) and part_poly.area > 1e-3:
                 part_id = f"dxf_part_{len(parts) + 1}"
                 sub_geoms = part_poly.geoms if isinstance(part_poly, MultiPolygon) else [part_poly]
                 hole_count = sum(len(g.interiors) for g in sub_geoms)
                 total_holes += hole_count
-                
+
                 metadata = {
                     "source_file": os.path.basename(file_path),
                     "holes_count": hole_count,
@@ -605,7 +726,7 @@ def validate_and_parse_dxf(file_path: str,
                 except Exception as e:
                     report["is_valid"] = False
                     report["errors"].append(str(e))
-        
+
     report["parts_extracted_count"] = len(parts)
     report["holes_extracted_count"] = total_holes
     return parts, report
@@ -640,7 +761,7 @@ def create_sample_industrial_dxfs(output_dir: str) -> List[str]:
     """
     os.makedirs(output_dir, exist_ok=True)
     created_paths = []
-    
+
     # 1. Structural Gusset Plate
     doc1 = ezdxf.new('R2010')
     msp1 = doc1.modelspace()
@@ -649,7 +770,7 @@ def create_sample_industrial_dxfs(output_dir: str) -> List[str]:
     p1 = os.path.join(output_dir, "gusset_plate.dxf")
     doc1.saveas(p1)
     created_paths.append(p1)
-    
+
     # 2. L-Bracket
     doc2 = ezdxf.new('R2010')
     msp2 = doc2.modelspace()
@@ -658,7 +779,7 @@ def create_sample_industrial_dxfs(output_dir: str) -> List[str]:
     p2 = os.path.join(output_dir, "l_bracket.dxf")
     doc2.saveas(p2)
     created_paths.append(p2)
-    
+
     # 3. Flange with chamfers
     doc3 = ezdxf.new('R2010')
     msp3 = doc3.modelspace()
@@ -667,7 +788,7 @@ def create_sample_industrial_dxfs(output_dir: str) -> List[str]:
     p3 = os.path.join(output_dir, "flange_plate.dxf")
     doc3.saveas(p3)
     created_paths.append(p3)
-    
+
     # 4. Slotted Base Plate
     doc4 = ezdxf.new('R2010')
     msp4 = doc4.modelspace()
@@ -676,7 +797,7 @@ def create_sample_industrial_dxfs(output_dir: str) -> List[str]:
     p4 = os.path.join(output_dir, "notched_base_plate.dxf")
     doc4.saveas(p4)
     created_paths.append(p4)
-    
+
     return created_paths
 
 def validate_exported_dxf(output_file: str, sheets: List[Any], area_tolerance: float = 0.05) -> Dict[str, Any]:
@@ -693,40 +814,40 @@ def validate_exported_dxf(output_file: str, sheets: List[Any], area_tolerance: f
     """
     if not os.path.exists(output_file):
         raise DXFExportValidationError(f"Exported DXF file does not exist: {output_file}")
-    
+
     try:
         doc = ezdxf.readfile(output_file)
     except Exception as e:
         raise DXFExportValidationError(f"Exported DXF failed reopenability check: {str(e)}")
-        
+
     auditor = doc.audit()
     if auditor.has_errors:
         err_msgs = [getattr(err, 'message', str(err)) for err in auditor.errors]
         raise DXFExportValidationError(f"Exported DXF failed structural audit with {len(auditor.errors)} error(s): {'; '.join(err_msgs)}")
-        
+
     msp = doc.modelspace()
     entities = list(msp)
-    
+
     sheet_boundaries = []
     cut_contours = []
     hole_contours = []
-    
+
     for ent in entities:
         dxftype = ent.dxftype()
         layer = ent.dxf.layer if hasattr(ent.dxf, 'layer') else '0'
-        
+
         if dxftype in ('LWPOLYLINE', 'POLYLINE'):
             if not ent.is_closed:
                 raise DXFExportValidationError(f"Polyline entity {getattr(ent.dxf, 'handle', 'UNKNOWN')} on layer '{layer}' is not closed.")
-            
+
             pts = [(p[0], p[1]) for p in ent.get_points()]
             if len(pts) < 3:
                 raise DXFExportValidationError(f"Polyline entity {getattr(ent.dxf, 'handle', 'UNKNOWN')} on layer '{layer}' has fewer than 3 vertices.")
-                
+
             poly = Polygon(pts)
             if not poly.is_valid:
                 poly = make_valid(poly)
-                
+
             if layer == 'SHEET_BOUNDARY':
                 sheet_boundaries.append(poly)
             elif layer in ('CUT_CONTOUR', 'PART_IN_PART_CHILD'):
@@ -737,30 +858,30 @@ def validate_exported_dxf(output_file: str, sheets: List[Any], area_tolerance: f
     # Layer presence checks
     if sheets and not sheet_boundaries:
         raise DXFExportValidationError("Exported DXF is missing expected SHEET_BOUNDARY layer polylines.")
-        
+
     expected_net_area = 0.0
     expected_placed_count = 0
     for s in sheets:
         for p_id, p_poly, p_rot in s.placed_parts:
             expected_net_area += p_poly.area
             expected_placed_count += 1
-            
+
     if expected_placed_count > 0 and not cut_contours:
         raise DXFExportValidationError("Exported DXF has placed parts but missing CUT_CONTOUR layer polylines.")
-        
+
     # Net area conservation check
     gross_cut_area = sum(p.area for p in cut_contours)
     hole_area = sum(p.area for p in hole_contours)
     reconstructed_net_area = gross_cut_area - hole_area
     area_delta = abs(reconstructed_net_area - expected_net_area)
-    
+
     if area_delta > area_tolerance:
         raise DXFExportValidationError(
             f"Net area conservation mismatch: expected {expected_net_area:.4f} mm², "
             f"reconstructed from DXF is {reconstructed_net_area:.4f} mm² "
             f"(delta: {area_delta:.4f} mm² exceeds tolerance {area_tolerance} mm²)."
         )
-        
+
     return {
         "valid": True,
         "entity_count": len(entities),
@@ -784,11 +905,11 @@ def export_nesting_to_dxf(sheets: List[Any], output_file: str, validate: bool = 
     """
     doc = ezdxf.new('R2010')
     msp = doc.modelspace()
-    
+
     # Add safety disclaimer in DXF text
-    msp.add_text("DISCLAIMER: AI-Generated Nesting Layout. Verify machine-specific lead-ins & kerf offsets.", 
+    msp.add_text("DISCLAIMER: AI-Generated Nesting Layout. Verify machine-specific lead-ins & kerf offsets.",
                  dxfattribs={'height': 15, 'color': 1}).set_placement((10, -30))
-    
+
     x_sheet_offset = 0.0
     for s_idx, sheet in enumerate(sheets):
         # Draw sheet boundary
@@ -799,27 +920,27 @@ def export_nesting_to_dxf(sheets: List[Any], output_file: str, validate: bool = 
             (x_sheet_offset, sheet.height)
         ]
         msp.add_lwpolyline(sheet_box, close=True, dxfattribs={'color': 7, 'layer': 'SHEET_BOUNDARY'})
-        
+
         # Draw placed parts
         for part_id, poly, rot in sheet.placed_parts:
             # Check if this part was nested inside an interior hole of a parent part
             is_child = hasattr(sheet, 'part_in_part_assignments') and part_id in sheet.part_in_part_assignments
             cut_layer = 'PART_IN_PART_CHILD' if is_child else 'CUT_CONTOUR'
             cut_color = 3 if is_child else 2 # Green for child parts, yellow for exterior contours
-            
+
             # Shift exterior poly by x_sheet_offset (supporting both Polygon and MultiPolygon)
             sub_polys = poly.geoms if isinstance(poly, MultiPolygon) else [poly]
             for sub_poly in sub_polys:
                 ext_coords = [(x + x_sheet_offset, y) for x, y in sub_poly.exterior.coords]
                 msp.add_lwpolyline(ext_coords, close=True, dxfattribs={'color': cut_color, 'layer': cut_layer})
-                
+
                 # Export interior holes on layer HOLE_CONTOUR
                 for interior in sub_poly.interiors:
                     hole_coords = [(x + x_sheet_offset, y) for x, y in interior.coords]
                     msp.add_lwpolyline(hole_coords, close=True, dxfattribs={'color': 4, 'layer': 'HOLE_CONTOUR'})
-            
+
         x_sheet_offset += sheet.width + 100.0 # 100mm gap between sheets in CAD view
-        
+
     doc.saveas(output_file)
     if validate:
         validate_exported_dxf(output_file, sheets)

@@ -29,16 +29,16 @@ def benchmark_shapes_instance(seeds=[42, 101, 202, 303, 404]):
     shapes_path = os.path.join(DATA_DIR, "esicup", "shapes.txt")
     if not os.path.exists(shapes_path):
         raise FileNotFoundError(f"Missing {shapes_path}")
-        
+
     parts, meta = parse_esicup_txt(shapes_path)
     total_parts_count = sum(p.quantity for p in parts)
     print(f"Loaded ESICUP SHAPES: {len(parts)} piece types, {total_parts_count} total parts.")
-    
+
     # Standard sheet dimensions for Shapes benchmark: width 100, height 40
     # Or scaled strip: width 40, height 100
     sheet_w, sheet_h = 40.0, 70.0
     clearance = 0.5
-    
+
     # 1. Run Baseline BLF
     print("Running Bottom-Left-Fill baseline...")
     blf_sheets, blf_stats = run_bottom_left_fill(
@@ -47,7 +47,7 @@ def benchmark_shapes_instance(seeds=[42, 101, 202, 303, 404]):
         step_size=1.0
     )
     print(f"BLF Baseline: Sheets={blf_stats['sheets_used']}, Util={blf_stats['utilization_pct']}%, Time={blf_stats['runtime_seconds']}s")
-    
+
     # 2. Run Simulated Annealing across seeds
     sa_results = []
     print("Running Simulated Annealing across seeds...")
@@ -73,14 +73,14 @@ def benchmark_shapes_instance(seeds=[42, 101, 202, 303, 404]):
             "utilization_gain_pct": round(util_gain, 2)
         })
         print(f"  Seed {s}: Util={sa_stats['utilization_pct']}%, Linear={sa_stats['total_linear_length_consumed']}mm (Saved={linear_saved:+.1f}mm), Time={sa_stats['runtime_seconds']}s")
-        
+
     utils = [r["utilization_pct"] for r in sa_results]
     gains = [r["utilization_gain_pct"] for r in sa_results]
     times = [r["runtime_seconds"] for r in sa_results]
     linears = [r["total_linear_length_consumed"] for r in sa_results]
     linear_saveds = [r["linear_saved_mm"] for r in sa_results]
     strip_utils = [r["continuous_strip_utilization_pct"] for r in sa_results]
-    
+
     summary = {
         "dataset": "ESICUP SHAPES (shapes.txt)",
         "provenance": "Oliveira, Gomes, Ferreira (2000) OR Spektrum",
@@ -105,7 +105,7 @@ def benchmark_industrial_dxf_instance(seeds=[42, 101, 202, 303, 404]):
     dxf_dir = os.path.join(DATA_DIR, "industrial_samples")
     dxf_files = create_sample_industrial_dxfs(dxf_dir)
     print(f"Created {len(dxf_files)} industrial sample DXF files.")
-    
+
     all_parts = []
     # Mix batch: 4 gussets, 6 brackets, 4 flanges, 3 base plates = 17 parts
     quantities = {"gusset_plate.dxf": 4, "l_bracket.dxf": 6, "flange_plate.dxf": 4, "notched_base_plate.dxf": 3}
@@ -115,14 +115,14 @@ def benchmark_industrial_dxf_instance(seeds=[42, 101, 202, 303, 404]):
         for p in parsed:
             p.quantity = quantities.get(base, 2)
             all_parts.append(p)
-            
+
     total_parts = sum(p.quantity for p in all_parts)
     print(f"Loaded Industrial Batch: {total_parts} parts.")
-    
+
     # Standard sheet: 800mm x 500mm
     sheet_w, sheet_h = 800.0, 500.0
     clearance = 4.0 # 4mm industrial plasma cutting clearance
-    
+
     print("Running Bottom-Left-Fill baseline...")
     blf_sheets, blf_stats = run_bottom_left_fill(
         all_parts, sheet_width=sheet_w, sheet_height=sheet_h,
@@ -130,7 +130,7 @@ def benchmark_industrial_dxf_instance(seeds=[42, 101, 202, 303, 404]):
         step_size=8.0
     )
     print(f"BLF Baseline: Sheets={blf_stats['sheets_used']}, Util={blf_stats['utilization_pct']}%, Time={blf_stats['runtime_seconds']}s")
-    
+
     sa_results = []
     print("Running Simulated Annealing across seeds...")
     for s in seeds:
@@ -155,14 +155,14 @@ def benchmark_industrial_dxf_instance(seeds=[42, 101, 202, 303, 404]):
             "utilization_gain_pct": round(util_gain, 2)
         })
         print(f"  Seed {s}: Util={sa_stats['utilization_pct']}%, Linear={sa_stats['total_linear_length_consumed']}mm (Saved={linear_saved:+.1f}mm), Time={sa_stats['runtime_seconds']}s")
-        
+
     utils = [r["utilization_pct"] for r in sa_results]
     gains = [r["utilization_gain_pct"] for r in sa_results]
     times = [r["runtime_seconds"] for r in sa_results]
     linears = [r["total_linear_length_consumed"] for r in sa_results]
     linear_saveds = [r["linear_saved_mm"] for r in sa_results]
     strip_utils = [r["continuous_strip_utilization_pct"] for r in sa_results]
-    
+
     summary = {
         "dataset": "Industrial DXF Mechanical Fabrication Batch",
         "provenance": "Synthetic parametric CAD contours (brackets, gussets, flanges, base plates) generated for mechanical fabrication testing",
@@ -186,17 +186,17 @@ def main():
     print("=========================================================")
     print("STARTING NEST-CRAFT INDEPENDENT BENCHMARK SUITE")
     print("=========================================================")
-    
+
     results = {
         "esicup_shapes": benchmark_shapes_instance(),
         "industrial_dxf": benchmark_industrial_dxf_instance()
     }
-    
+
     out_json = os.path.join(REPORTS_DIR, "benchmark_results.json")
     with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nAll benchmark results successfully saved to {out_json}")
-    
+
     # Save CSV comparison
     rows = []
     for k, v in results.items():
@@ -212,6 +212,7 @@ def main():
             "BLF_Linear_Consumed_mm": blf["total_linear_length_consumed"],
             "BLF_Strip_Util_Pct": blf["continuous_strip_utilization_pct"],
             "BLF_Remnant_Width_mm": blf["final_sheet_remnant"].get("remnant_width", 0.0),
+            "BLF_Final_Sheet_Remnant_Width_mm": blf["final_sheet_remnant"].get("remnant_width", 0.0),
             "SA_Sheets": v["sa_runs"][0]["sheets_used"],
             "SA_Discrete_Util_Pct": v["sa_mean_utilization"],
             "SA_Linear_Consumed_mm": v["sa_mean_linear_consumed_mm"],
@@ -219,7 +220,9 @@ def main():
             "SA_Linear_Compaction_Pct": round(linear_compaction_pct, 2),
             "SA_Strip_Util_Pct": v["sa_mean_strip_utilization"],
             "SA_Remnant_Width_mm": v["sa_runs"][0]["final_sheet_remnant"].get("remnant_width", 0.0),
-            "SA_Prime_Remnant_Saved": v["sa_runs"][0]["final_sheet_remnant"].get("is_prime_remnant", False),
+            "SA_Final_Sheet_Remnant_Width_mm": v["sa_runs"][0]["final_sheet_remnant"].get("remnant_width", 0.0),
+            "SA_Final_Sheet_Estimated_Geometric_Remnant": v["sa_runs"][0]["final_sheet_remnant"].get("estimated_geometric_remnant", False),
+            "SA_Estimated_Geometric_Remnant": v["sa_runs"][0]["final_sheet_remnant"].get("estimated_geometric_remnant", False),
             "BLF_Runtime_Sec": blf["runtime_seconds"],
             "SA_Mean_Runtime_Sec": v["sa_mean_runtime"]
         })

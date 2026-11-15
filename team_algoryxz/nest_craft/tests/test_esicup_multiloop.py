@@ -122,7 +122,7 @@ def test_esicup_malformed_first_loop_followed_by_valid_loop_rejected():
 QUANTITY
 1
 NUMBER OF VERTICES
-9
+10
 VERTICES (X,Y)
 0 0
 100 100
@@ -154,7 +154,7 @@ def test_esicup_valid_first_loop_followed_by_malformed_loop_rejected():
 QUANTITY
 1
 NUMBER OF VERTICES
-9
+10
 VERTICES (X,Y)
 0 0
 50 0
@@ -363,6 +363,333 @@ VERTICES (X,Y)
 
         assert meta["total_pieces_extracted"] == 2
         assert meta["total_quantity"] == 8
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_valid_explicitly_closed_single_loop():
+    """Verify parse_esicup_txt ingests valid explicitly closed single loop (v_last == v_first)."""
+    content = """PIECE 1
+QUANTITY
+2
+NUMBER OF VERTICES
+5
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+0 50
+0 0
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        parts, meta = parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert len(parts) == 1
+        p = parts[0]
+        assert isinstance(p.polygon, Polygon)
+        assert len(p.polygon.interiors) == 0
+        assert pytest.approx(p.polygon.area, rel=1e-3) == 2500.0
+        assert p.quantity == 2
+        assert meta["is_valid"] is True
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_valid_legacy_unclosed_single_loop():
+    """Verify parse_esicup_txt preserves legacy single-loop backward compatibility (implicit closure)."""
+    content = """PIECE 1
+QUANTITY
+3
+NUMBER OF VERTICES
+4
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+0 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        parts, meta = parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert len(parts) == 1
+        p = parts[0]
+        assert isinstance(p.polygon, Polygon)
+        assert len(p.polygon.interiors) == 0
+        assert pytest.approx(p.polygon.area, rel=1e-3) == 2500.0
+        assert p.quantity == 3
+        assert meta["is_valid"] is True
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_unclosed_final_loop_after_closed_loop_rejected():
+    """Verify parse_esicup_txt rejects unclosed final sub-loop after an explicitly closed sub-loop."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+9
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+0 50
+0 0
+60 0
+110 0
+110 50
+60 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "unclosed final sub-loop" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_malformed_coordinate_row_extra_values_rejected():
+    """Verify parse_esicup_txt rejects coordinate rows with extra values (e.g. 3 tokens instead of 2)."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+4
+VERTICES (X,Y)
+0 0
+50 0 10
+50 50
+0 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "malformed coordinate row" in str(exc_info.value).lower()
+        assert "expected exactly 2 values" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_malformed_coordinate_row_missing_value_rejected():
+    """Verify parse_esicup_txt rejects coordinate rows with missing values (e.g. 1 token instead of 2)."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+4
+VERTICES (X,Y)
+0 0
+50
+50 50
+0 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "malformed coordinate row" in str(exc_info.value).lower()
+        assert "expected exactly 2 values" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_malformed_coordinate_row_non_numeric_rejected():
+    """Verify parse_esicup_txt rejects coordinate rows with non-numeric text values."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+4
+VERTICES (X,Y)
+0 0
+50 bad_coord
+50 50
+0 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "malformed coordinate row" in str(exc_info.value).lower()
+        assert "cannot parse" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_malformed_coordinate_row_non_finite_rejected():
+    """Verify parse_esicup_txt rejects coordinate rows with NaN or Inf values."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+4
+VERTICES (X,Y)
+0 0
+50 nan
+50 50
+0 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "non-finite coordinate value" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_vertex_count_mismatch_too_few_rows_rejected():
+    """Verify parse_esicup_txt rejects when actual coordinate rows are fewer than declared NUMBER OF VERTICES."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+5
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+0 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "vertex count mismatch" in str(exc_info.value).lower()
+        assert "declared 5" in str(exc_info.value).lower()
+        assert "parsed 4" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_vertex_count_mismatch_too_many_rows_rejected():
+    """Verify parse_esicup_txt rejects when actual coordinate rows exceed declared NUMBER OF VERTICES."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+4
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+0 50
+0 0
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "vertex count mismatch" in str(exc_info.value).lower()
+        assert "declared 4" in str(exc_info.value).lower()
+        assert "parsed 5" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_missing_number_of_vertices_declaration_rejected():
+    """Verify parse_esicup_txt rejects pieces missing NUMBER OF VERTICES declaration."""
+    content = """PIECE 1
+QUANTITY
+1
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+0 50
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "missing 'number of vertices'" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_unclosed_loop_followed_by_closed_loop_rejected():
+    """Verify parse_esicup_txt rejects unclosed leading sequence followed by closed sub-loop."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+9
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+0 50
+60 0
+110 0
+110 50
+60 50
+60 0
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "unclosed" in str(exc_info.value).lower() or "internal loop closure" in str(exc_info.value).lower()
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+def test_esicup_unclosed_single_loop_with_duplicate_vertices_rejected():
+    """Verify parse_esicup_txt rejects unclosed single loop that contains duplicate non-closing vertices."""
+    content = """PIECE 1
+QUANTITY
+1
+NUMBER OF VERTICES
+4
+VERTICES (X,Y)
+0 0
+50 0
+50 50
+50 0
+"""
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        with pytest.raises(CADTopologyError) as exc_info:
+            parse_esicup_txt(tmp_path, allow_repaired_topology=False)
+        assert "duplicate vertices" in str(exc_info.value).lower() or "unclosed" in str(exc_info.value).lower()
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)

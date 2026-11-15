@@ -34,6 +34,11 @@ from team_algoryxz.nest_craft.src.calculator import (
     calculate_fabrication_savings,
     calculate_remnant_plate_value
 )
+from team_algoryxz.nest_craft.src.visualization_3d import (
+    build_sheet_3d_scene,
+    create_3d_viewport_figure,
+    create_multi_sheet_3d_figure,
+)
 
 st.set_page_config(
     page_title="NEST-CRAFT — AI Sheet Metal Nesting",
@@ -44,7 +49,7 @@ st.set_page_config(
 
 # App Header
 st.title("⚙️ NEST-CRAFT: AI-Assisted Irregular Polygon Nesting")
-st.markdown("**Empirical Material Optimization & Prime Remnant Recovery for Structural Steel Fabrication MSMEs**")
+st.markdown("**Empirical Material Optimization & Geometric Remnant Intelligence for Structural Steel Fabrication MSMEs**")
 st.caption("Hardware-free research prototype evaluating genuine irregular polygon placement using Shapely exact geometry. Not a G-code generator.")
 
 # Sidebar Configuration: Steps 1 & 2
@@ -53,6 +58,7 @@ st.sidebar.markdown("### 📋 Navigation & Configuration")
 st.sidebar.markdown("#### Step 1: Sheet & Cutting Parameters")
 sheet_width = st.sidebar.number_input("Sheet Width (mm)", min_value=100.0, max_value=6000.0, value=800.0, step=50.0)
 sheet_height = st.sidebar.number_input("Sheet Height (mm)", min_value=100.0, max_value=3000.0, value=500.0, step=50.0)
+sheet_thickness = st.sidebar.number_input("Plate Thickness (mm)", min_value=0.5, max_value=100.0, value=6.0, step=0.5, help="Physical plate & part thickness for 3D CAD extrusion.")
 cutting_clearance = st.sidebar.slider("Torch Clearance / Kerf Offset (mm)", min_value=0.0, max_value=15.0, value=4.0, step=0.5)
 
 st.sidebar.markdown("#### Step 2: Optimization Parameters")
@@ -123,12 +129,6 @@ with st.expander("⚙️ Advanced CAD Topology & Ingestion Controls", expanded=F
         value=False,
         help="When unchecked (default), self-intersecting or malformed contours are strictly rejected to prevent manufacturing defects."
     )
-    if allow_repaired_topology:
-        st.error(
-            "🚨 **ACTIVE CAD SAFETY OVERRIDE:** `allow_repaired_topology=True` is explicitly authorized. "
-            "Self-intersecting geometry will undergo automated topological repair (`make_valid`), which alters CAD "
-            "vertex coordinates and loop topologies. Uncheck this option to enforce strict fail-closed CAD rejection."
-        )
 
 parts_list: List[Part] = []
 batch_reports: List[Dict[str, Any]] = []
@@ -172,7 +172,6 @@ if uploaded_files:
             "Holes": r.get("holes_extracted_count", 0),
             "Unclosed Segments": r.get("unclosed_segments_count", 0),
             "Unsupported 3D": len(r.get("unsupported_3d_entities", [])),
-            "Active Overrides": ", ".join(r.get("active_overrides", [])) if r.get("active_overrides") else "None",
             "Errors": "; ".join(r.get("errors", [])) if r.get("errors") else "None",
             "Warnings": "; ".join(r.get("warnings", [])) if r.get("warnings") else "None"
         })
@@ -229,7 +228,7 @@ if run_optimization:
             grain_direction=selected_grain, step_size=8.0,
             allow_part_in_part=allow_part_in_part
         )
-        
+
     with st.spinner(f"Running Simulated Annealing Optimizer ({opt_iterations} iterations, T_init=100)..."):
         sa_sheets, sa_stats = run_simulated_annealing(
             parts_list, sheet_width=sheet_width, sheet_height=sheet_height,
@@ -239,7 +238,7 @@ if run_optimization:
             step_size=8.0, random_seed=42,
             allow_part_in_part=allow_part_in_part
         )
-        
+
     st.session_state["blf_sheets"] = blf_sheets
     st.session_state["blf_stats"] = blf_stats
     st.session_state["sa_sheets"] = sa_sheets
@@ -288,7 +287,7 @@ if "blf_stats" in st.session_state and "sa_stats" in st.session_state:
     )
 
     # Linear Compaction & Remnant Accounting
-    st.markdown("##### C. Linear Compaction & Remnant Plate Preservation")
+    st.markdown("##### C. Linear Compaction & Geometric Remnant Quantification")
     blf_lin = blf_stats.get('total_linear_length_consumed', 0.0)
     sa_lin = sa_stats.get('total_linear_length_consumed', 0.0)
     lin_saved = blf_lin - sa_lin
@@ -301,14 +300,14 @@ if "blf_stats" in st.session_state and "sa_stats" in st.session_state:
     c1.metric("BLF Linear Span", f"{blf_lin:.1f} mm")
     c2.metric("SA Linear Span", f"{sa_lin:.1f} mm", delta=f"-{lin_saved:.1f} mm ({lin_pct:.1f}% saved)" if lin_saved > 0 else "0 mm")
     c3.metric(
-        "Sheet 3 Remnant (BLF)",
+        "Final Sheet Margin (BLF)",
         f"{blf_rem.get('remnant_width', 0):.0f} x {sheet_height:.0f} mm",
-        delta="Unusable scrap strip" if not blf_rem.get('is_prime_remnant', False) else "Prime plate"
+        delta="Margin < 100 mm" if not blf_rem.get('estimated_geometric_remnant', False) else "Margin >= 100 mm"
     )
     c4.metric(
-        "Sheet 3 Remnant (SA)",
+        "Final Sheet Margin (SA)",
         f"{sa_rem.get('remnant_width', 0):.0f} x {sheet_height:.0f} mm",
-        delta=f"{sa_rem.get('remnant_pct', 0):.1f}% preserved plate" if sa_rem.get('is_prime_remnant', False) else "Scrap"
+        delta=f"{sa_rem.get('remnant_pct', 0):.1f}% unnested margin" if sa_rem.get('estimated_geometric_remnant', False) else "Margin < 100 mm"
     )
 
     # Process Diagnostics
@@ -319,10 +318,34 @@ if "blf_stats" in st.session_state and "sa_stats" in st.session_state:
     d3.metric("Rolling Grain Constraint", f"{str(sa_stats.get('grain_direction', 'None')).title()}")
     d4.metric("Algorithm Run Time", f"{sa_stats.get('runtime_seconds', 0.0):.2f} s")
 
-    st.caption("ℹ️ **Accounting Discipline:** In discrete plate purchasing, steel mills bill integer stock plates. Simulated Annealing creates tangible financial value by compacting the nesting span to leave a large, reusable **prime remnant plate** on Sheet 3 for subsequent production rather than generating unusable skeleton scrap.")
+    st.caption("ℹ️ **Accounting Discipline:** In discrete plate purchasing, raw stock plates are purchased as whole units. Compacting linear extent along the final plate increases the **geometric unnested margin** on Sheet 3 ($434\\text{ mm}$ vs $50\\text{ mm}$ in BLF). This layout compaction is a calculated layout measurement only and does not constitute fewer purchased sheets, higher utilization, qualified reusable inventory, or realized financial savings until physically severed, deburred, squared, inspected, and cataloged.")
 
     # Visual Layouts
-    st.markdown("##### E. Visual Sheet Layouts")
+    st.markdown("##### E. Visual Sheet Layouts & 3D CAD Viewport")
+
+    col_vmode, col_algo = st.columns([1.6, 1.0])
+    with col_vmode:
+        view_mode = st.radio(
+            "Inspection Viewport Mode",
+            options=[
+                "3D Interactive CAD Model (Plotly 3D)",
+                "2D Engineering Blueprint (Matplotlib)",
+                "Split View (2D Blueprint & 3D Model Side-by-Side)"
+            ],
+            index=0,
+            horizontal=True,
+            help="Toggle between 2D engineering blueprint and interactive 3D solid CAD model."
+        )
+    with col_algo:
+        view_algo = st.selectbox(
+            "Solution To Inspect in 3D",
+            options=["Simulated Annealing (Optimized)", "Bottom-Left-Fill (Baseline)"],
+            index=0,
+            help="Choose which algorithm's nesting layout to inspect."
+        )
+
+    active_sheets = sa_sheets if view_algo == "Simulated Annealing (Optimized)" else blf_sheets
+    active_algo_name = "Simulated Annealing" if view_algo == "Simulated Annealing (Optimized)" else "Baseline BLF"
 
     def plot_sheets(sheets, title):
         fig, axes = plt.subplots(len(sheets), 1, figsize=(8, 3.5 * len(sheets)))
@@ -372,16 +395,145 @@ if "blf_stats" in st.session_state and "sa_stats" in st.session_state:
         plt.tight_layout()
         return fig
 
-    v_col1, v_col2 = st.columns(2)
-    with v_col1:
-        st.write("**Bottom-Left-Fill Baseline (No Sequence Optimization)**")
-        fig_blf = plot_sheets(blf_sheets, "Baseline BLF")
-        st.pyplot(fig_blf)
+    def render_3d_viewport(sheets, algo_title, container=st):
+        sheet_choices = [
+            f"Sheet {i+1} ({s.width:.0f}x{s.height:.0f}mm) — {len(s.placed_parts)} parts"
+            for i, s in enumerate(sheets)
+        ]
+        if len(sheets) > 1:
+            sheet_choices.append(f"All Sheets ({len(sheets)} Plates Batch Multi-View)")
 
-    with v_col2:
-        st.write("**Simulated Annealing (Sequence & Placement Optimization)**")
-        fig_sa = plot_sheets(sa_sheets, "Simulated Annealing")
-        st.pyplot(fig_sa)
+        c_sel, c_thick, c_cam = container.columns([1.2, 1.0, 1.0])
+        with c_sel:
+            selected_sheet_label = st.selectbox(
+                "Select Sheet Plate",
+                options=sheet_choices,
+                index=0,
+                key=f"sel_sheet_{algo_title}"
+            )
+        with c_thick:
+            thk_val = st.number_input(
+                "Part Thickness (mm)",
+                min_value=0.5,
+                max_value=100.0,
+                value=float(sheet_thickness),
+                step=0.5,
+                key=f"thk_{algo_title}"
+            )
+        with c_cam:
+            cam_preset = st.selectbox(
+                "Camera Preset",
+                options=["Isometric CAD", "Top (Plan XY)", "Front (Elevation XZ)", "Side (Elevation YZ)"],
+                index=0,
+                key=f"cam_{algo_title}"
+            )
+        cam_key = {
+            "Isometric CAD": "isometric",
+            "Top (Plan XY)": "top",
+            "Front (Elevation XZ)": "front",
+            "Side (Elevation YZ)": "side"
+        }[cam_preset]
+
+        with container.expander("🛠️ Advanced 3D CAD Controls & Part Visibility", expanded=False):
+            c_ctrl1, c_ctrl2, c_ctrl3 = st.columns(3)
+            with c_ctrl1:
+                z_exag = st.slider(
+                    "Visual Z-Scale Exaggeration",
+                    min_value=1.0,
+                    max_value=15.0,
+                    value=5.0,
+                    step=1.0,
+                    help="Amplifies thickness visually so thin plates are clearly visible in isometric perspective. (1.0x = true physical scale).",
+                    key=f"zex_{algo_title}"
+                )
+            with c_ctrl2:
+                show_edges = st.checkbox("Show Wireframe CAD Edges", value=True, key=f"edges_{algo_title}")
+                show_substrate = st.checkbox("Show Stock Substrate Bed", value=True, key=f"sub_{algo_title}")
+            with c_ctrl3:
+                show_rem = st.checkbox("Show Unnested Remnant Margin", value=True, key=f"rem_{algo_title}")
+
+            all_part_ids = []
+            for s in sheets:
+                for pid, _, _ in s.placed_parts:
+                    if pid not in all_part_ids:
+                        all_part_ids.append(pid)
+
+            selected_visible_parts = st.multiselect(
+                "Part Visibility Filter (Leave empty to show all parts)",
+                options=all_part_ids,
+                default=all_part_ids,
+                key=f"vis_{algo_title}"
+            )
+
+        is_multi = selected_sheet_label.startswith("All Sheets")
+        if is_multi:
+            fig_3d = create_multi_sheet_3d_figure(
+                sheets,
+                part_thickness=thk_val,
+                sheet_thickness=max(1.5, thk_val * 0.3),
+                z_exaggeration=z_exag,
+                camera_preset=cam_key
+            )
+            total_p = sum(len(s.placed_parts) for s in sheets)
+            container.info(f"Displaying all {len(sheets)} stock plates arranged side-by-side with {total_p} total placed parts.")
+        else:
+            sheet_idx = sheet_choices.index(selected_sheet_label)
+            cur_sheet = sheets[sheet_idx]
+            vis_filter = selected_visible_parts if len(selected_visible_parts) < len(all_part_ids) else None
+
+            fig_3d = create_3d_viewport_figure(
+                cur_sheet,
+                part_thickness=thk_val,
+                sheet_thickness=max(1.5, thk_val * 0.3),
+                z_exaggeration=z_exag,
+                visible_part_ids=vis_filter,
+                show_sheet_plate=show_substrate,
+                show_remnant=show_rem,
+                show_edges=show_edges,
+                camera_preset=cam_key
+            )
+
+            scene_data = build_sheet_3d_scene(
+                cur_sheet,
+                part_thickness=thk_val,
+                visible_part_ids=vis_filter,
+                show_remnant=show_rem
+            )
+            b1, b2, b3, b4, b5 = container.columns(5)
+            b1.metric("Sheet Dimensions", f"{cur_sheet.width:.0f} × {cur_sheet.height:.0f} mm")
+            b2.metric("Nominal Thickness", f"{thk_val:.1f} mm")
+            b3.metric("Parts Nested", f"{scene_data['total_parts_visible']} / {scene_data['total_parts_nested']}")
+            b4.metric("Total Net Volume", f"{scene_data['total_net_volume_cm3']:.1f} cm³")
+            b5.metric("Estimated Mass", f"{scene_data['total_mass_kg']:.2f} kg")
+
+        container.caption("ℹ️ **CAD Verification Notice:** This interactive 3D solid model is a direct geometric extrusion and visualization of the optimized 2D nesting layout. The 2D nesting engine remains the sole source of truth for part placement coordinates, orientation angles, and cutting clearance boundaries.")
+        container.plotly_chart(fig_3d, use_container_width=True)
+
+    if view_mode == "2D Engineering Blueprint (Matplotlib)":
+        v_col1, v_col2 = st.columns(2)
+        with v_col1:
+            st.write("**Bottom-Left-Fill Baseline (No Sequence Optimization)**")
+            fig_blf = plot_sheets(blf_sheets, "Baseline BLF")
+            st.pyplot(fig_blf)
+
+        with v_col2:
+            st.write("**Simulated Annealing (Sequence & Placement Optimization)**")
+            fig_sa = plot_sheets(sa_sheets, "Simulated Annealing")
+            st.pyplot(fig_sa)
+
+    elif view_mode == "3D Interactive CAD Model (Plotly 3D)":
+        st.markdown(f"**Interactive 3D Solid Model: {active_algo_name}**")
+        render_3d_viewport(active_sheets, active_algo_name, container=st)
+
+    elif view_mode == "Split View (2D Blueprint & 3D Model Side-by-Side)":
+        s_col1, s_col2 = st.columns(2)
+        with s_col1:
+            st.markdown(f"**2D Engineering Blueprint ({active_algo_name})**")
+            fig_2d = plot_sheets(active_sheets, active_algo_name)
+            st.pyplot(fig_2d)
+        with s_col2:
+            st.markdown(f"**3D Interactive CAD Model ({active_algo_name})**")
+            render_3d_viewport(active_sheets, f"split_{active_algo_name}", container=s_col2)
 
     # Step 8: Validated DXF Export & CAM Handoff
     st.markdown("---")

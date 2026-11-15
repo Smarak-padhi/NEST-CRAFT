@@ -3,7 +3,7 @@
 **Team Algoryxz · Odisha AI Hackathon 2026**
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-138%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
+[![Tests Passing](https://img.shields.io/badge/tests-159%20passed-brightgreen.svg)](docs/PROJECT_STATUS.md)
 [![Prototype Status](https://img.shields.io/badge/status-Hackathon%20Demo%20Ready-orange.svg)](docs/PROJECT_STATUS.md)
 
 NEST-CRAFT is a Python and Streamlit engineering prototype designed to optimize 2D irregular sheet-metal nesting for manufacturing fabrication. It ingests CAD/DXF profiles, models complex polygonal parts and interior apertures using Shapely, executes heuristic Bottom-Left-Fill (BLF) and Simulated Annealing (SA) optimization, enables Part-in-Part cavity nesting, and exports multi-layer AutoCAD R2010 DXF files for downstream CAM toolpath generation.
@@ -20,7 +20,7 @@ In structural and job-shop fabrication, manual nesting of irregular parts on sta
 
 NEST-CRAFT was engineered as an open research and engineering prototype to explore how computational geometry and metaheuristic optimization can:
 1. **Reduce Linear Cutting Extent:** Packing components tighter along continuous shearing lines to minimize wasted stock advance (achieving a **17.19% reduction in linear nesting extent versus BLF on the specified 17-part, 800 × 500 mm, 4 mm-clearance industrial benchmark**).
-2. **Reclaim Offcut Remnant Plates:** Quantifying rectangular virgin offcuts ($> 100\text{ mm} \times 100\text{ mm}$) to enable secondary job scheduling rather than consigning large plate sections to the scrap bin.
+2. **Quantify Geometric Unnested Margins:** Quantifying contiguous unnested plate margins ($> 100\text{ mm} \times 100\text{ mm}$) along the final partially nested sheet to evaluate layout compaction without misrepresenting geometric estimates as physically qualified reusable stock.
 3. **Exploit Part-in-Part Cavities:** Automatically placing smaller brackets inside the internal cutouts of larger flange and base plates, eliminating artificial voids.
 
 ---
@@ -30,8 +30,9 @@ NEST-CRAFT was engineered as an open research and engineering prototype to explo
 - **Core Geometry Engine:** [Shapely 2.1](https://shapely.readthedocs.io/) (GEOS C++ wrapper for robust 2D planar topology, polygon buffering, intersection testing, and containment).
 - **CAD I/O Interchange:** [ezdxf 1.4](https://ezdxf.mozman.at/) (AutoCAD R2010 DXF parsing, entity tessellation, topological loop extraction, and structured layer generation).
 - **Optimization Algorithms:** Python 3.12 standard library & NumPy (Bottom-Left-Fill heuristic, Simulated Annealing with adaptive cooling, sequence permutations, and grain direction filters).
-- **Interactive UI Dashboard:** [Streamlit 1.43](https://streamlit.io/) with Matplotlib (real-time multi-sheet CAD layout preview, remnant intelligence cards, and DXF downloaders).
-- **Automated Test Suite:** [pytest 8.3](https://docs.pytest.org/) (138 unit, integration, adversarial stress, and geometry conservation tests).
+- **Interactive UI Dashboard:** [Streamlit 1.43](https://streamlit.io/) with Matplotlib & Plotly 3D (real-time multi-sheet CAD layout preview, interactive 3D solid model viewport, remnant intelligence cards, and DXF downloaders).
+- **3D CAD Visualization Engine:** Plotly 3D & custom Shapely 2D-to-3D extrusion (isualization_3d.py) with topological hole preservation, discrete substrate modeling, wireframe edge rendering, and camera view presets.
+- **Automated Test Suite:** [pytest 8.3](https://docs.pytest.org/) (159 unit, integration, 3D visualization, adversarial stress, and geometry conservation tests).
 
 ---
 
@@ -133,12 +134,17 @@ python team_algoryxz/nest_craft/benchmarks/run_nesting_benchmarks.py
 | **Average Unnested Remnant Zone** | 25,000 mm² | **227,000 mm²** | Contiguous unnested boundary area |
 | **Average Runtime** | 3.59s | **7.48s** | Fast interactive feedback |
 
-*Metric Truthfulness Disclosure:* The 17.19% reduction in linear cutting extent along the unfinished final plate is a benchmark-specific compaction metric. It does **NOT** constitute evidence of:
+*Metric Truthfulness & Remnant Classification Disclosure:* The 17.19% reduction in linear cutting extent along the unfinished final plate is a benchmark-specific compaction metric. It does **NOT** constitute evidence of:
 - Fewer purchased sheets (both BLF and SA required exactly 3 plates)
 - Increased overall sheet utilization
 - Material or financial savings
-- Scrap resale value or scrap reduction
+- Physical prime reusable inventory or scrap reduction
 - Production performance across arbitrary real-world parts
+
+**Remnant Material Distinctions:**
+- **Geometric unnested margin:** A calculated layout measurement only (the unnested span along the final plate, e.g. 434 mm vs 50 mm).
+- **Prime reusable remnant:** Requires physical severing, deburring, squaring, inspection and inventory qualification before entering secondary production stock.
+- **Offcut scrap:** Material not qualified as reusable stock, destined for scrap recycling.
 When 3 discrete plates are consumed, 3 plates remain physically required. Fractional averages across seeds (e.g. 3.60 sheets) are statistical aggregation artifacts, not physical fractional purchases.
 
 ---

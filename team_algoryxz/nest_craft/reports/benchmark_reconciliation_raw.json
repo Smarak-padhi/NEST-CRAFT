@@ -34,7 +34,7 @@
         "remnant_height": 70.0,
         "remnant_area": 157.5,
         "remnant_pct": 5.62,
-        "is_prime_remnant": false
+        "estimated_geometric_remnant": false
       },
       "per_sheet_metrics": [
         {
@@ -49,7 +49,7 @@
           "remnant_height": 70.0,
           "remnant_area": 17.5,
           "remnant_pct": 0.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         {
           "sheet_id": 2,
@@ -63,7 +63,7 @@
           "remnant_height": 70.0,
           "remnant_area": 157.5,
           "remnant_pct": 5.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         }
       ]
     },
@@ -96,7 +96,7 @@
           "remnant_height": 70.0,
           "remnant_area": 297.5,
           "remnant_pct": 10.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -111,7 +111,7 @@
             "remnant_height": 70.0,
             "remnant_area": 87.5,
             "remnant_pct": 3.12,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -125,7 +125,7 @@
             "remnant_height": 70.0,
             "remnant_area": 297.5,
             "remnant_pct": 10.62,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -309,7 +309,7 @@
           "remnant_height": 70.0,
           "remnant_area": 367.5,
           "remnant_pct": 13.12,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -324,7 +324,7 @@
             "remnant_height": 70.0,
             "remnant_area": 17.5,
             "remnant_pct": 0.62,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -338,7 +338,7 @@
             "remnant_height": 70.0,
             "remnant_area": 367.5,
             "remnant_pct": 13.12,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -522,7 +522,7 @@
           "remnant_height": 70.0,
           "remnant_area": 262.5,
           "remnant_pct": 9.38,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -537,7 +537,7 @@
             "remnant_height": 70.0,
             "remnant_area": 192.5,
             "remnant_pct": 6.88,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -551,7 +551,7 @@
             "remnant_height": 70.0,
             "remnant_area": 262.5,
             "remnant_pct": 9.38,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -735,7 +735,7 @@
           "remnant_height": 70.0,
           "remnant_area": 332.5,
           "remnant_pct": 11.88,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -750,7 +750,7 @@
             "remnant_height": 70.0,
             "remnant_area": 52.5,
             "remnant_pct": 1.88,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -764,7 +764,7 @@
             "remnant_height": 70.0,
             "remnant_area": 332.5,
             "remnant_pct": 11.88,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -948,7 +948,7 @@
           "remnant_height": 70.0,
           "remnant_area": 437.5,
           "remnant_pct": 15.62,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -963,7 +963,7 @@
             "remnant_height": 70.0,
             "remnant_area": 17.5,
             "remnant_pct": 0.62,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -977,7 +977,7 @@
             "remnant_height": 70.0,
             "remnant_area": 437.5,
             "remnant_pct": 15.62,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -1163,7 +1163,7 @@
           "remnant_height": 70.0,
           "remnant_area": 345.31,
           "remnant_pct": 12.33,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -1178,7 +1178,7 @@
             "remnant_height": 70.0,
             "remnant_area": 23.07,
             "remnant_pct": 0.82,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -1192,7 +1192,7 @@
             "remnant_height": 70.0,
             "remnant_area": 345.31,
             "remnant_pct": 12.33,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -1376,7 +1376,7 @@
           "remnant_height": 70.0,
           "remnant_area": 251.9,
           "remnant_pct": 9.0,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -1391,7 +1391,7 @@
             "remnant_height": 70.0,
             "remnant_area": 143.14,
             "remnant_pct": 5.11,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -1405,7 +1405,7 @@
             "remnant_height": 70.0,
             "remnant_area": 251.9,
             "remnant_pct": 9.0,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -1589,7 +1589,7 @@
           "remnant_height": 70.0,
           "remnant_area": 305.04,
           "remnant_pct": 10.89,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -1604,7 +1604,7 @@
             "remnant_height": 70.0,
             "remnant_area": 20.22,
             "remnant_pct": 0.72,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -1618,7 +1618,7 @@
             "remnant_height": 70.0,
             "remnant_area": 305.04,
             "remnant_pct": 10.89,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -1802,7 +1802,7 @@
           "remnant_height": 70.0,
           "remnant_area": 290.04,
           "remnant_pct": 10.36,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -1817,7 +1817,7 @@
             "remnant_height": 70.0,
             "remnant_area": 24.38,
             "remnant_pct": 0.87,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -1831,7 +1831,7 @@
             "remnant_height": 70.0,
             "remnant_area": 290.04,
             "remnant_pct": 10.36,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -2015,7 +2015,7 @@
           "remnant_height": 70.0,
           "remnant_area": 162.71,
           "remnant_pct": 5.81,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -2030,7 +2030,7 @@
             "remnant_height": 70.0,
             "remnant_area": 73.77,
             "remnant_pct": 2.63,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -2044,7 +2044,7 @@
             "remnant_height": 70.0,
             "remnant_area": 162.71,
             "remnant_pct": 5.81,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -2247,7 +2247,7 @@
         "remnant_height": 500.0,
         "remnant_area": 25000.0,
         "remnant_pct": 6.25,
-        "is_prime_remnant": false
+        "estimated_geometric_remnant": false
       },
       "per_sheet_metrics": [
         {
@@ -2262,7 +2262,7 @@
           "remnant_height": 500.0,
           "remnant_area": 20000.0,
           "remnant_pct": 5.0,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         {
           "sheet_id": 2,
@@ -2276,7 +2276,7 @@
           "remnant_height": 500.0,
           "remnant_area": 33000.0,
           "remnant_pct": 8.25,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         {
           "sheet_id": 3,
@@ -2290,7 +2290,7 @@
           "remnant_height": 500.0,
           "remnant_area": 25000.0,
           "remnant_pct": 6.25,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         }
       ]
     },
@@ -2323,7 +2323,7 @@
           "remnant_height": 500.0,
           "remnant_area": 217000.0,
           "remnant_pct": 54.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -2338,7 +2338,7 @@
             "remnant_height": 500.0,
             "remnant_area": 18000.0,
             "remnant_pct": 4.5,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -2352,7 +2352,7 @@
             "remnant_height": 500.0,
             "remnant_area": 3000.0,
             "remnant_pct": 0.75,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -2366,7 +2366,7 @@
             "remnant_height": 500.0,
             "remnant_area": 217000.0,
             "remnant_pct": 54.25,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
@@ -2520,7 +2520,7 @@
           "remnant_height": 500.0,
           "remnant_area": 145000.0,
           "remnant_pct": 36.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -2535,7 +2535,7 @@
             "remnant_height": 500.0,
             "remnant_area": 20000.0,
             "remnant_pct": 5.0,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -2549,7 +2549,7 @@
             "remnant_height": 500.0,
             "remnant_area": 13000.0,
             "remnant_pct": 3.25,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -2563,7 +2563,7 @@
             "remnant_height": 500.0,
             "remnant_area": 145000.0,
             "remnant_pct": 36.25,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
@@ -2717,7 +2717,7 @@
           "remnant_height": 500.0,
           "remnant_area": 329000.0,
           "remnant_pct": 82.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -2732,7 +2732,7 @@
             "remnant_height": 500.0,
             "remnant_area": 3000.0,
             "remnant_pct": 0.75,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -2746,7 +2746,7 @@
             "remnant_height": 500.0,
             "remnant_area": 3000.0,
             "remnant_pct": 0.75,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -2760,7 +2760,7 @@
             "remnant_height": 500.0,
             "remnant_area": 329000.0,
             "remnant_pct": 82.25,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
@@ -2914,7 +2914,7 @@
           "remnant_height": 500.0,
           "remnant_area": 207000.0,
           "remnant_pct": 51.75,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -2929,7 +2929,7 @@
             "remnant_height": 500.0,
             "remnant_area": 18000.0,
             "remnant_pct": 4.5,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -2943,7 +2943,7 @@
             "remnant_height": 500.0,
             "remnant_area": 23000.0,
             "remnant_pct": 5.75,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -2957,7 +2957,7 @@
             "remnant_height": 500.0,
             "remnant_area": 207000.0,
             "remnant_pct": 51.75,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
@@ -3111,7 +3111,7 @@
           "remnant_height": 500.0,
           "remnant_area": 237000.0,
           "remnant_pct": 59.25,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -3126,7 +3126,7 @@
             "remnant_height": 500.0,
             "remnant_area": 8000.0,
             "remnant_pct": 2.0,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -3140,7 +3140,7 @@
             "remnant_height": 500.0,
             "remnant_area": 55000.0,
             "remnant_pct": 13.75,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           },
           {
             "sheet_id": 3,
@@ -3154,7 +3154,7 @@
             "remnant_height": 500.0,
             "remnant_area": 237000.0,
             "remnant_pct": 59.25,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
@@ -3310,7 +3310,7 @@
           "remnant_height": 500.0,
           "remnant_area": 286057.71,
           "remnant_pct": 71.51,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -3325,7 +3325,7 @@
             "remnant_height": 500.0,
             "remnant_area": 20741.58,
             "remnant_pct": 5.19,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -3339,7 +3339,7 @@
             "remnant_height": 500.0,
             "remnant_area": 12989.65,
             "remnant_pct": 3.25,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -3353,7 +3353,7 @@
             "remnant_height": 500.0,
             "remnant_area": 21528.01,
             "remnant_pct": 5.38,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 4,
@@ -3367,7 +3367,7 @@
             "remnant_height": 500.0,
             "remnant_area": 286057.71,
             "remnant_pct": 71.51,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
@@ -3521,7 +3521,7 @@
           "remnant_height": 500.0,
           "remnant_area": 11522.77,
           "remnant_pct": 2.88,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -3536,7 +3536,7 @@
             "remnant_height": 500.0,
             "remnant_area": 3804.54,
             "remnant_pct": 0.95,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -3550,7 +3550,7 @@
             "remnant_height": 500.0,
             "remnant_area": 15111.35,
             "remnant_pct": 3.78,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -3564,7 +3564,7 @@
             "remnant_height": 500.0,
             "remnant_area": 11522.77,
             "remnant_pct": 2.88,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -3718,7 +3718,7 @@
           "remnant_height": 500.0,
           "remnant_area": 300005.05,
           "remnant_pct": 75.0,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -3733,7 +3733,7 @@
             "remnant_height": 500.0,
             "remnant_area": 32548.09,
             "remnant_pct": 8.14,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -3747,7 +3747,7 @@
             "remnant_height": 500.0,
             "remnant_area": 33326.71,
             "remnant_pct": 8.33,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -3761,7 +3761,7 @@
             "remnant_height": 500.0,
             "remnant_area": 62677.76,
             "remnant_pct": 15.67,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           },
           {
             "sheet_id": 4,
@@ -3775,7 +3775,7 @@
             "remnant_height": 500.0,
             "remnant_area": 300005.05,
             "remnant_pct": 75.0,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
@@ -3929,7 +3929,7 @@
           "remnant_height": 500.0,
           "remnant_area": 42990.64,
           "remnant_pct": 10.75,
-          "is_prime_remnant": false
+          "estimated_geometric_remnant": false
         },
         "per_sheet_metrics": [
           {
@@ -3944,7 +3944,7 @@
             "remnant_height": 500.0,
             "remnant_area": 5748.82,
             "remnant_pct": 1.44,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -3958,7 +3958,7 @@
             "remnant_height": 500.0,
             "remnant_area": 24474.41,
             "remnant_pct": 6.12,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -3972,7 +3972,7 @@
             "remnant_height": 500.0,
             "remnant_area": 42990.64,
             "remnant_pct": 10.75,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           }
         ],
         "history": [
@@ -4126,7 +4126,7 @@
           "remnant_height": 500.0,
           "remnant_area": 286057.71,
           "remnant_pct": 71.51,
-          "is_prime_remnant": true
+          "estimated_geometric_remnant": true
         },
         "per_sheet_metrics": [
           {
@@ -4141,7 +4141,7 @@
             "remnant_height": 500.0,
             "remnant_area": 15685.81,
             "remnant_pct": 3.92,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 2,
@@ -4155,7 +4155,7 @@
             "remnant_height": 500.0,
             "remnant_area": 20373.56,
             "remnant_pct": 5.09,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 3,
@@ -4169,7 +4169,7 @@
             "remnant_height": 500.0,
             "remnant_area": 12784.95,
             "remnant_pct": 3.2,
-            "is_prime_remnant": false
+            "estimated_geometric_remnant": false
           },
           {
             "sheet_id": 4,
@@ -4183,7 +4183,7 @@
             "remnant_height": 500.0,
             "remnant_area": 286057.71,
             "remnant_pct": 71.51,
-            "is_prime_remnant": true
+            "estimated_geometric_remnant": true
           }
         ],
         "history": [
